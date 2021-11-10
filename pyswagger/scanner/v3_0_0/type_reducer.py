@@ -1,9 +1,9 @@
 from __future__ import absolute_import
-from ..scan import Dispatcher
-from ..errs import SchemaError
-from ..spec.v2_0.objects import Operation
-from ..utils import scope_compose
-from ..consts import private
+from ...scan import Dispatcher
+from ...errs import SchemaError
+from ...spec.v3_0_0.objects import Operation
+from ...utils import scope_compose
+from ...consts import private
 
 class TypeReduce(object):
     """ Type Reducer, collect Operation & Model
@@ -32,4 +32,3 @@ class TypeReduce(object):
                 raise SchemaError('duplicated key found: ' + new_scope)
 
             self.op[new_scope] = obj
-

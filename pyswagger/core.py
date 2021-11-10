@@ -3,12 +3,14 @@ from .resolve import Resolver
 from .primitives import Primitive, MimeCodec
 from .spec.v1_2.parser import ResourceListContext
 from .spec.v2_0.parser import SwaggerContext
-from .spec.v2_0.objects import Operation
+from .spec.v3_0_0.parser import OpenApiContext
 from .spec.base import BaseObj
 from .scan import Scanner
-from .scanner import TypeReduce, CycleDetector
 from .scanner.v1_2 import Upgrade
-from .scanner.v2_0 import AssignParent, Merge, Resolve, PatchObject, YamlFixer, Aggregate, NormalizeRef
+from .scanner import v2_0 as scanlib2_0
+from .spec import v2_0 as speclib2_0
+from .scanner import v3_0_0 as scanlib3_0_0
+from .spec import v3_0_0 as speclib3_0_0
 from pyswagger import utils, errs, consts
 import copy
 import base64
@@ -172,10 +174,19 @@ class App(object):
             # swagger 1.2
             with ResourceListContext(tmp, '_tmp_') as ctx:
                 ctx.parse(obj, jref, self.__resolver, getter)
+
+        # after Swagger 2.0, we need to handle
+        # the loading order of external reference
+
         elif version == '2.0':
             # swagger 2.0
             with SwaggerContext(tmp, '_tmp_') as ctx:
                 ctx.parse(obj)
+        elif version == '3.0.0':
+            # openapi 3.0.0
+            with OpenApiContext(tmp, '_tmp_') as ctx:
+                ctx.parse(obj)
+
         elif version == None and parser:
             with parser(tmp, '_tmp_') as ctx:
                 ctx.parse(obj)
@@ -210,11 +221,18 @@ class App(object):
 
             s.scan(root=obj, route=[AssignParent()])
 
+        if self.__version in ['1.2', '2.0']:
+            scanlib = scanlib2_0
+            speclib = speclib2_0
+        elif self.__version in ['3.0.0']:
+            scanlib = scanlib3_0_0
+            speclib = speclib3_0_0
+
         # fix for yaml that treat response code as number
-        s.scan(root=obj, route=[YamlFixer()], leaves=[Operation])
+        s.scan(root=obj, route=[scanlib.yaml.YamlFixer()], leaves=[speclib.objects.Operation])
         # normalize $ref
         url, jp = utils.jr_split(jref)
-        s.scan(root=obj, route=[NormalizeRef(url)])
+        s.scan(root=obj, route=[scanlib.NormalizeRef(url)])
         # cache this object
         if url not in self.__objs:
             if jp == '#':
@@ -223,12 +241,13 @@ class App(object):
                 self.__objs[url] = {jp: obj}
         else:
             if not isinstance(self.__objs[url], dict):
-                raise Exception('it should be able to resolve with BaseObj')
-            self.__objs[url].update({jp: obj})
+                raise Exception('Prepare: obj already in cache (has prepare() been called twice?)')
+            else:
+                self.__objs[url].update({jp: obj})
 
         # pre resolve Schema Object
         # note: make sure this object is cached before using 'Resolve' scanner
-        s.scan(root=obj, route=[Resolve()])
+        s.scan(root=obj, route=[scanlib.Resolve()])
         return obj
 
     def _validate(self):
@@ -283,7 +302,7 @@ class App(object):
         url = utils.normalize_url(url)
         app = kls(url, url_load_hook=url_load_hook, sep=sep, prim=prim, mime_codec=mime_codec, resolver=resolver)
         app.__raw, app.__version = app.load_obj(url, getter=getter, parser=parser)
-        if app.__version not in ['1.2', '2.0']:
+        if app.__version not in ['1.2', '2.0', '3.0.0']:
             raise NotImplementedError('Unsupported Version: {0}'.format(self.__version))
 
         # update scheme if any
@@ -326,13 +345,19 @@ class App(object):
                 self.__schemes = [six.moves.urlparse(self.__url).schemes]
 
         s = Scanner(self)
-        s.scan(root=self.__root, route=[Merge()])
-        s.scan(root=self.__root, route=[PatchObject()])
-        s.scan(root=self.__root, route=[Aggregate()])
+
+        if self.__version in ['1.2', '2.0']:
+            scanlib = scanlib2_0
+        elif self.__version in ['3.0.0']:
+            scanlib = scanlib3_0_0
+
+        s.scan(root=self.__root, route=[scanlib.Merge()])
+        s.scan(root=self.__root, route=[scanlib.PatchObject()])
+        s.scan(root=self.__root, route=[scanlib.Aggregate()])
 
         # reducer for Operation
-        tr = TypeReduce(self.__sep)
-        cy = CycleDetector()
+        tr = scanlib.TypeReduce(self.__sep)
+        cy = scanlib.CycleDetector()
         s.scan(root=self.__root, route=[tr, cy])
 
         # 'op' -- shortcut for Operation with tag and operaionId
@@ -638,4 +663,3 @@ class BaseClient(object):
 
 SwaggerApp = App
 SwaggerSecurity = Security
-

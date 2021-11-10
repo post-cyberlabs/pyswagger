@@ -237,10 +237,8 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v2_0)):
     }
 
     __internal_fields__ = {
-        'method': None,
         'url': None,
         'path': None,
-        'base_path': None,
         'cached_schemes': [],
     }
 

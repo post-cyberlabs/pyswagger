@@ -1,13 +1,13 @@
 from __future__ import absolute_import
-from ..utils import walk
-from ..scan import Dispatcher
-from ..spec.v2_0.objects import (
+from ...utils import walk
+from ...scan import Dispatcher
+from ...spec.v2_0.objects import (
     Schema,
     Parameter,
     Response,
     PathItem,
     )
-from ..spec.v2_0.parser import (
+from ...spec.v2_0.parser import (
     SchemaContext,
     ParameterContext,
     ResponseContext,
@@ -91,4 +91,3 @@ class CycleDetector(object):
             functools.partial(_out, app, PathItemContext),
             self.cycles['path_item']
         )
-

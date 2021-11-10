@@ -12,6 +12,9 @@ def get_test_data_folder(version='1.2', which=''):
     folder = os.path.join(os.path.join(folder, version), which)
     return folder
 
+def get_test_file(version, which, file_name):
+    with open(os.path.join(get_test_data_folder(version, which), file_name), 'r') as f:
+        return f.read()
 
 class DictDB(dict):
     """ Simple DB for singular model """
@@ -62,4 +65,3 @@ def is_windows():
 
 def is_py2():
     return sys.version_info.major < 3
-

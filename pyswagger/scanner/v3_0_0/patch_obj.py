@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from ...scan import Dispatcher
-from ...spec.v2_0.objects import PathItem, Operation, Schema, Swagger
-from ...spec.v2_0.parser import PathItemContext
+from ...spec.v3_0_0.objects import PathItem, Operation, Schema, OpenApi, Parameter
+from ...spec.v3_0_0.parser import PathItemContext
 from ...utils import jp_split, scope_split, final
 import six
 import copy
@@ -20,7 +20,7 @@ class PatchObject(object):
     def _operation(self, path, obj, app):
         """
         """
-        if isinstance(app.root, Swagger):
+        if isinstance(app.root, OpenApi):
             # produces/consumes
             obj.update_field('produces', app.root.produces if len(obj.produces) == 0 else obj.produces)
             obj.update_field('consumes', app.root.consumes if len(obj.consumes) == 0 else obj.consumes)
@@ -39,13 +39,13 @@ class PatchObject(object):
                 obj.update_field('parameters', copy.copy(obj._parent_.parameters))
 
         # schemes
-        obj.update_field('cached_schemes', app.schemes if len(obj.schemes) == 0 else obj.schemes)
+        #obj.update_field('cached_schemes', app.schemes if len(obj.schemes) == 0 else obj.schemes)
 
         # primitive factory
         setattr(obj, '_prim_factory', app.prim_factory)
 
         # inherit service-wide security requirements
-        if obj.security == None and isinstance(app.root, Swagger):
+        if obj.security == None and isinstance(app.root, OpenApi):
             obj.update_field('security', app.root.security)
 
         # mime_codec
@@ -56,23 +56,24 @@ class PatchObject(object):
         """
         """
         k = jp_split(path)[-1] # key to the dict containing PathItem(s)
-        if isinstance(app.root, Swagger):
-            host = app.root.host if app.root.host else six.moves.urllib.parse.urlparse(app.url)[1]
-            host = host if len(host) > 0 else 'localhost'
-            url = six.moves.urllib.parse.ParseResult(
-                    '',                            # schema
-                    host,                          # netloc
-                    (app.root.basePath or '') + k, # path
-                    '', '', ''                     # param, query, fragment
-            )
-            base_path = app.root.basePath
+
+        if isinstance(app.root, OpenApi):
+            host = None
+            if app.root.servers:
+                for server in app.root.servers:
+                    if 'url' in server:
+                        host = server['url']
+            if not host:
+                host = six.moves.urllib.parse.urlparse(app.url)[1]
+            #host = host if len(host) > 0 else 'localhost'
+            url = six.moves.urllib.parse.urlparse(host)
         else:
             url = None
-            base_path = None
 
         for n in six.iterkeys(PathItemContext.__swagger_child__):
             o = getattr(obj, n)
             if isinstance(o, Operation):
+                # path
                 o.update_field('url', url)
                 o.update_field('path', k)
 
