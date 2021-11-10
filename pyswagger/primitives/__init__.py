@@ -186,10 +186,10 @@ class Primitive(object):
         ctx['guard'].update(obj)
 
         ret = None
-        if obj.type:
-            creater, _2nd = self.get(_type=obj.type, _format=obj.format)
+        if obj.schema:
+            creater, _2nd = self.get(_type=obj.schema.type, _format=obj.schema.format)
             if not creater:
-                raise ValueError('Can\'t resolve type from:(' + str(obj.type) + ', ' + str(obj.format) + ')')
+                raise ValueError('Can\'t resolve type from:(' + str(obj.schema.type) + ', ' + str(obj.schema.format) + ')')
 
             ret = creater(obj, val, ctx)
             if _2nd:
@@ -253,4 +253,3 @@ class Primitive(object):
 
 
 SwaggerPrimitive = Primitive
-
