@@ -3,6 +3,7 @@ from ..base import BaseObj, FieldMeta
 from ...utils import final
 from ...io import Request as IORequest
 from ...io import Response as IOResponse
+from ...primitives import Array
 import six
 
 
@@ -202,6 +203,7 @@ class Schema(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'deprecated': None,
 
         'allOf': [],
+        'anyOf': [],
         #'one_of': dict(key='oneOf', builder=rename),
         #'any_of': dict(key='anyOf', builder=rename),
         #'not_': dict(key='not', builder=rename),
@@ -300,7 +302,9 @@ class Parameter(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
 
     def _prim_(self, v, prim_factory, ctx=None):
         i = getattr(self, 'in')
-        return prim_factory.produce(self.schema, v, ctx) if i == 'body' else prim_factory.produce(self, v, ctx)
+
+        # From OpenAPI all Parameter objects have schemas.
+        return prim_factory.produce(self, v, ctx)# if i == 'body' else prim_factory.produce(self, v, ctx)
 
 ParameterOrReference = if_not_ref_else(Parameter)
 

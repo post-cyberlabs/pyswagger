@@ -186,16 +186,19 @@ class Primitive(object):
         ctx['guard'].update(obj)
 
         ret = None
-        if obj.schema:
-            creater, _2nd = self.get(_type=obj.schema.type, _format=obj.schema.format)
+        schema = deref(obj.schema)
+
+        if schema.type:
+            print(schema.__dict__)
+            creater, _2nd = self.get(_type=schema.type, _format=schema.format)
             if not creater:
-                raise ValueError('Can\'t resolve type from:(' + str(obj.schema.type) + ', ' + str(obj.schema.format) + ')')
+                raise ValueError('Can\'t resolve type from:(' + str(schema.type) + ', ' + str(schema.format) + ')')
 
             ret = creater(obj, val, ctx)
             if _2nd:
                 val = _2nd(obj, ret, val, ctx)
                 ctx['2nd_pass'] = _2nd
-        elif len(obj.properties) or obj.additionalProperties:
+        elif len(schema.properties) or schema.additionalProperties:
             ret = Model()
             val = ret.apply_with(obj, val, ctx)
 
