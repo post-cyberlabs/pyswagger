@@ -2,7 +2,9 @@ from __future__ import absolute_import
 from ...core import BaseClient
 from requests import Session, Request
 import six
+import logging
 
+logger = logging.getLogger(__name__)
 
 class Client(BaseClient):
     """ Client implementation based on requests
@@ -10,20 +12,19 @@ class Client(BaseClient):
 
     __schemes__ = set(['http', 'https'])
 
-    def __init__(self, auth=None, send_opt=None):
+    def __init__(self, auth=None, send_opt={}, opt={}):
         """ constructor
 
         :param auth pyswagger.SwaggerAuth: auth info used when requesting
         :param send_opt dict: options used in requests.send, ex verify=False
         """
         super(Client, self).__init__(auth)
-        if send_opt is None:
-            send_opt = {}
 
         self.__s = Session()
         self.__send_opt = send_opt
+        self.__opt = opt
 
-    def request(self, req_and_resp, opt=None, headers=None):
+    def request(self, req_and_resp, opt={}, headers=None):
         """
         """
 
@@ -32,12 +33,16 @@ class Client(BaseClient):
         req.reset()
         resp.reset()
 
-        opt = opt or {}
-        req, resp = super(Client, self).request((req, resp), opt)
+        self.__opt.update(opt)
 
-        # apply request-related options before preparation.
+        req, resp = super(Client, self).request((req, resp), self.__opt)
+
+        logger.info('client.opt: {0}'.format(str(self.__opt)))
+        logger.info('client.send_opt: {0}'.format(str(self.__send_opt)))
+
+        # apply request-related options before preparation
+        req._patch(self.__send_opt)
         req.prepare(scheme=self.prepare_schemes(req), handle_files=False)
-        req._patch(opt)
 
         composed_headers = self.compose_headers(req, headers, opt, as_dict=True)
 
@@ -75,4 +80,3 @@ class Client(BaseClient):
         )
 
         return resp
-

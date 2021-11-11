@@ -587,7 +587,11 @@ class BaseClient(object):
         """
 
         # fix test bug when in python3 scheme, more details in commint msg
-        ret = sorted(self.__schemes__ & set(req.schemes), reverse=True)
+        if req.schemes:
+            ret = sorted(self.__schemes__ & set(req.schemes), reverse=True)
+        # if schemes are not specified (ex: in OpenApi, take the first one available)
+        else:
+            ret = self.__schemes__.copy().pop()
 
         if len(ret) == 0:
             raise ValueError('No schemes available: {0}'.format(req.schemes))

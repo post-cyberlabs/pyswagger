@@ -158,18 +158,13 @@ class Request(object):
         """
         opt_netloc = opt.pop(Request.opt_url_netloc, None)
         opt_scheme = opt.pop(Request.opt_url_scheme, None)
-        if opt_netloc or opt_scheme:
-            scheme, netloc, path, params, query, fragment = six.moves.urllib.parse.urlparse(self.__url)
-            self.__url = six.moves.urllib.parse.urlunparse((
-                opt_scheme or scheme,
-                opt_netloc or netloc,
-                path,
-                params,
-                query,
-                fragment
-            ))
 
-            logger.info('patching url: [{0}]'.format(self.__url))
+        if opt_netloc:
+            self.__url = self.__url._replace(netloc=opt_netloc)
+        if opt_scheme:
+            self.__url = self.__url._replace(scheme=opt_scheme)
+
+        logger.info('patching url: [{0}]'.format(str(self.__url)))
 
     def prepare(self, scheme='http', handle_files=True, encoding='utf-8'):
         """ make this request ready for Clients
@@ -200,7 +195,10 @@ class Request(object):
         self.__path = self.__path.format(**path_params)
 
         # combine path parameters into url
-        self.__url = ''.join([scheme, ':', self.__url.format(**path_params)])
+        try:
+            self.__url = self.__url._replace(path=self.__url.path.format(**path_params), scheme=scheme)
+        except Exception as ex:
+            raise ValueError("Could not encode url path {0} with path parameters {1}: Exception because of {2}".format(self.__url.path, str(path_params), str(ex)))
 
         # header parameters
         self.__header.update(self.__p['header'])
@@ -254,7 +252,7 @@ class Request(object):
 
         :type: str
         """
-        return self.__url
+        return self.__url.geturl()
 
     @property
     def path(self):
