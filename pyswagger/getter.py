@@ -104,10 +104,10 @@ class LocalGetter(Getter):
                     raise ValueError('Unable to locate resource file: [{0}]'.format(path))
 
     def load(self, path):
-        logger.info('to load: [{0}]'.format(path))
+        logger.debug('to load: [{0}]'.format(path))
 
         path = patch_path(self.base_path, path)
-        logger.info('final path to load: [{0}]'.format(path))
+        logger.info('loading: [{0}]'.format(path))
 
         ret = None
         with open(path, 'r') as f:

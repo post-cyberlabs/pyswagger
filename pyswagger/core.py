@@ -45,7 +45,7 @@ class App(object):
         :param resolver: pyswagger.resolve.Resolver: customized resolver used as default when none is provided when resolving
         """
 
-        logger.info('init with url: {0}'.format(url))
+        logger.debug('init with url: {0}'.format(url))
 
         self.__root = None
         self.__raw = None
@@ -198,7 +198,7 @@ class App(object):
         if not tmp['_tmp_']:
             raise Exception('Unable to parse object from {0}'.format(jref))
 
-        logger.info('version: {0}'.format(version))
+        logger.debug('version: {0}'.format(version))
 
         return tmp['_tmp_'], version
 
@@ -407,7 +407,7 @@ class App(object):
         :raises ValueError: if path is not valid
         """
 
-        logger.info('resolving: [{0}]'.format(jref))
+        logger.debug('resolving: [{0}]'.format(jref))
 
         if jref == None or len(jref) == 0:
             raise ValueError('Empty Path is not allowed')
