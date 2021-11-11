@@ -27,11 +27,6 @@ class PatchObject(object):
 
         # combine parameters from PathItem
         if obj._parent_:
-            # fullfill Operation.method based on parent
-            for attr in dir(obj._parent_):
-                if not attr.startswith('_'):
-                    if getattr(obj._parent_, attr) == obj:
-                        obj.update_field('method', attr)
             # Operation parameters ovverride PathItem parameters
             if obj.parameters:
                 for p in obj._parent_.parameters:
@@ -80,6 +75,7 @@ class PatchObject(object):
             o = getattr(obj, n)
             if isinstance(o, Operation):
                 # path
+                o.update_field('method', n)
                 o.update_field('url', url)
                 o.update_field('path', k)
 
