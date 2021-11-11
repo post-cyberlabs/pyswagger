@@ -191,6 +191,8 @@ class Operation(six.with_metaclass(FieldMeta, DataTypeObj)):
     __internal_fields__ = {
         # path from Api object, concated with Resource object
         'path': None,
+        # http method filled by patch_obj
+        'method': None,
     }
 
     def get_name(self, path):
@@ -214,7 +216,7 @@ class Property(six.with_metaclass(FieldMeta, DataTypeObj)):
 
     __swagger_fields__ = {
         'description': None,
-    }     
+    }
 
 
 class Model(six.with_metaclass(FieldMeta, BaseObj_v1_2)):
@@ -307,4 +309,3 @@ class ResourceList(six.with_metaclass(FieldMeta, BaseObj_v1_2)):
         'info': None,
         'authorizations': None,
     }
-

@@ -511,6 +511,8 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'url': None,
         'path': None,
         'cached_schemes': [],
+        # http method filled by patch_obj
+        'method': None,
     }
 
     def __call__(self, **k):
