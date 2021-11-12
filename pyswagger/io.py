@@ -21,14 +21,14 @@ class Request(object):
     # when testing a set of Swagger APIs locally.
     opt_url_netloc = 'url_netloc'
     opt_url_scheme = 'url_scheme'
-    opt_url_path_params = 'url_path_params'
 
     def __init__(self, op, params):
-        """ constructor
+        """ constrcutor
 
         :param Operation op: the related Operation object
         :param dict params: parameter set provided by user
         """
+
         self.__op = op
         self.__p = params
         self.__url = self.__op.url
@@ -158,18 +158,11 @@ class Request(object):
         """
         opt_netloc = opt.pop(Request.opt_url_netloc, None)
         opt_scheme = opt.pop(Request.opt_url_scheme, None)
-        opt_path_params = opt.pop(Request.opt_url_path_params, None)
 
         if opt_netloc:
             self.__url = self.__url._replace(netloc=opt_netloc)
         if opt_scheme:
             self.__url = self.__url._replace(scheme=opt_scheme)
-        # TODO this should be optional if we implement properly servers: variables
-        if opt_path_params:
-            try:
-                self.__url = self.__url._replace(path=self.__url.path.format(**opt_path_params))
-            except Exception as ex:
-                raise ValueError("Could not preencode url path {0} with path parameters {1}: Exception because of {2}".format(self.__url.path, str(opt_path_params), str(ex)))
 
         logger.info('patching url: [{0}]'.format(str(self.__url)))
 
