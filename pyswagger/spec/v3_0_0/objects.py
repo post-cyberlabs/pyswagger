@@ -98,11 +98,8 @@ class ServerVariable(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
     __swagger_fields__ = {
         'default': None,
         'description': None,
+        'enum': [],
     }
-
-#    __children__ = {
-#        'enum': dict(child_builder=list_(is_str)),
-#    }
 
 #    __internal_fields__ = {
 #        'enum_': dict(key='enum', builder=rename)
@@ -113,6 +110,7 @@ class Server(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
     __swagger_fields__ = {
         'url': None,
         'description': None,
+        'variables': None,
     }
 
 #    __children__ = {

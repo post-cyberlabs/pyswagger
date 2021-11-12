@@ -26,6 +26,7 @@ from .objects import (
     MediaType,
     Link,
     Server,
+    ServerVariable,
     RequestBody,
     XML_)
 
@@ -179,10 +180,17 @@ class MediaTypeContext(Context):
 #        'examples': dict(child_builder=ExampleOrReference),
 #        'encoding': dict(child_builder=map_(Encoding)),
 
+class ServerVariableContext(Context):
+
+    __swagger_ref_object__ = ServerVariable
+
 class ServerContext(Context):
 
     __swagger_ref_object__ = Server
 
+    __swagger_child__ = {
+        'variables': (ContainerType.dict_, ServerVariableContext),
+    }
 
 class LinkContext(Context):
 
@@ -324,7 +332,7 @@ class OpenApiContext(Context):
 
     __swagger_child__ = {
         'info': (None, InfoContext),
-        #'servers': (ContainerType.list_, ServersContext),
+        'servers': (ContainerType.list_, ServerContext),
         'paths': (ContainerType.dict_, PathItemContext),
         'components': (None, ComponentsContext),
         #'security': (ContainerType.list_, SecurityContext),

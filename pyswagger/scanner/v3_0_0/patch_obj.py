@@ -5,7 +5,9 @@ from ...spec.v3_0_0.parser import PathItemContext
 from ...utils import jp_split, scope_split, final
 import six
 import copy
+import logging
 
+logger = logging.getLogger(__name__)
 
 class PatchObject(object):
     """
@@ -60,10 +62,24 @@ class PatchObject(object):
 
         if isinstance(app.root, OpenApi):
             host = None
-            if app.root.servers:
+            if hasattr(app.root,'servers') and app.root.servers:
                 for server in app.root.servers:
-                    if 'url' in server:
-                        host = server['url']
+                    if server.url:
+                        host = server.url
+                        if server.variables:
+                            vars = {}
+                            for name, vardata in server.variables.items():
+                                if name in app.server:
+                                    vars[name] = app.server[name]
+                                elif vardata.default:
+                                    logger.warning("Using default value for server variable %s : %s" % (name, vardata.default))
+                                    vars[name] = vardata.default
+                                else:
+                                    if vardata.enum:
+                                        raise ValueError("Server variable %s is required (proposals:%s)" % (name,",".join(vardata.enum)))
+                                    else:
+                                        raise ValueError("Server variable %s is required" % name)
+                            host = host.format(**vars)
             if not host:
                 host = six.moves.urllib.parse.urlparse(app.url)[1]
             #host = host if len(host) > 0 else 'localhost'

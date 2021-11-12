@@ -35,7 +35,7 @@ class App(object):
         sc_path: ('/', '#/paths')
     }
 
-    def __init__(self, url=None, url_load_hook=None, sep=consts.private.SCOPE_SEPARATOR, prim=None, mime_codec=None, resolver=None):
+    def __init__(self, url=None, url_load_hook=None, sep=consts.private.SCOPE_SEPARATOR, prim=None, mime_codec=None, resolver=None, server={}):
         """ constructor
 
         :param url str: url of swagger.json
@@ -55,6 +55,7 @@ class App(object):
         self.__m = None
         self.__schemes = []
         self.__url=url
+        self.__server = server
 
         # a map from json-reference to
         # - spec.BaseObj
@@ -139,6 +140,12 @@ class App(object):
         :type: list of str, ex. ['http', 'https']
         """
         return self.__schemes
+
+    @property
+    def server(self):
+        """ server variables (used in OpenApi/swaggerv3, or used for overrides)
+        """
+        return self.__server
 
     @property
     def url(self):
@@ -277,7 +284,7 @@ class App(object):
         return v.errs
 
     @classmethod
-    def load(kls, url, getter=None, parser=None, url_load_hook=None, sep=consts.private.SCOPE_SEPARATOR, prim=None, mime_codec=None, resolver=None):
+    def load(kls, url, getter=None, parser=None, url_load_hook=None, sep=consts.private.SCOPE_SEPARATOR, prim=None, mime_codec=None, resolver=None, server={}):
         """ load json as a raw App
 
         :param str url: url of path of Swagger API definition
@@ -300,7 +307,7 @@ class App(object):
         logger.info('load with [{0}]'.format(url))
 
         url = utils.normalize_url(url)
-        app = kls(url, url_load_hook=url_load_hook, sep=sep, prim=prim, mime_codec=mime_codec, resolver=resolver)
+        app = kls(url, url_load_hook=url_load_hook, sep=sep, prim=prim, mime_codec=mime_codec, resolver=resolver, server=server)
         app.__raw, app.__version = app.load_obj(url, getter=getter, parser=parser)
         if app.__version not in ['1.2', '2.0', '3.0.0']:
             raise NotImplementedError('Unsupported Version: {0}'.format(self.__version))
@@ -376,7 +383,7 @@ class App(object):
             raise errs.CycleDetectionError('Cycles detected in Schema Object: {0}'.format(cy.cycles['schema']))
 
     @classmethod
-    def create(kls, url, strict=True):
+    def create(kls, url, strict=True, server={}):
         """ factory of App
 
         :param str url: url of path of Swagger API definition
@@ -386,7 +393,7 @@ class App(object):
         :raises ValueError: if url is wrong
         :raises NotImplementedError: the swagger version is not supported.
         """
-        app = kls.load(url)
+        app = kls.load(url, server=server)
         app.prepare(strict=strict)
 
         return app
