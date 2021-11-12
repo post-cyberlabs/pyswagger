@@ -173,7 +173,7 @@ class Request(object):
 
         logger.info('patching url: [{0}]'.format(str(self.__url)))
 
-    def prepare(self, scheme='http', handle_files=True, encoding='utf-8'):
+    def prepare(self, scheme=None, handle_files=True, encoding='utf-8'):
         """ make this request ready for Clients
 
         :param str scheme: scheme used in this request
@@ -181,17 +181,19 @@ class Request(object):
         :param str encoding: encoding for body content.
         :rtype: Request
         """
-
-        if isinstance(scheme, list):
-            if self.__scheme is None:
-                scheme = scheme.pop()
-            else:
-                if self.__scheme in scheme:
-                    scheme = self.__scheme
+        if scheme != None:
+            if isinstance(scheme, list):
+                if self.__scheme is None:
+                    scheme = scheme.pop()
                 else:
-                    raise Exception('preferred scheme:{} is not supported by the client or spec:{}'.format(self.__scheme, scheme))
-        elif not isinstance(scheme, six.string_types):
-            raise ValueError('"scheme" should be a list or string')
+                    if self.__scheme in scheme:
+                        scheme = self.__scheme
+                    else:
+                        raise Exception('preferred scheme:{} is not supported by the client or spec:{}'.format(self.__scheme, scheme))
+            elif not isinstance(scheme, six.string_types):
+                raise ValueError('"scheme" should be a list or string')
+
+            self.__url = self.__url._replace(scheme=scheme)
 
         # combine path parameters into path
         # TODO: 'dot' is allowed in swagger, but it won't work in python-format
@@ -199,11 +201,10 @@ class Request(object):
         for k, v in six.iteritems(self.__p['path']):
             path_params[k] = six.moves.urllib.parse.quote_plus(v)
 
-        self.__path = self.__path.format(**path_params)
-
         # combine path parameters into url
         try:
-            self.__url = self.__url._replace(path=self.__url.path.format(**path_params), scheme=scheme)
+            self.__path = self.__path.format(**path_params)
+            self.__url = self.__url._replace(path=self.__url.path.format(**path_params))
         except Exception as ex:
             raise ValueError("Could not encode url path {0} with path parameters {1}: Exception because of {2}".format(self.__url.path, str(path_params), str(ex)))
 

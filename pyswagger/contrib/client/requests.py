@@ -12,7 +12,7 @@ class Client(BaseClient):
 
     __schemes__ = set(['http', 'https'])
 
-    def __init__(self, auth=None, send_opt={}, opt={}):
+    def __init__(self, auth=None, opt={}):
         """ constructor
 
         :param auth pyswagger.SwaggerAuth: auth info used when requesting
@@ -21,7 +21,6 @@ class Client(BaseClient):
         super(Client, self).__init__(auth)
 
         self.__s = Session()
-        self.__send_opt = send_opt
         self.__opt = opt
 
     def request(self, req_and_resp, opt={}, headers=None):
@@ -38,11 +37,14 @@ class Client(BaseClient):
         req, resp = super(Client, self).request((req, resp), self.__opt)
 
         logger.info('client.opt: {0}'.format(str(self.__opt)))
-        logger.info('client.send_opt: {0}'.format(str(self.__send_opt)))
 
         # apply request-related options before preparation
-        req._patch(self.__send_opt)
-        req.prepare(scheme=self.prepare_schemes(req), handle_files=False)
+        scheme=self.prepare_schemes(req)
+        if scheme:
+            req.prepare(scheme=scheme, handle_files=False)
+        else:
+            req.prepare(handle_files=False)
+        req._patch(self.__opt)
 
         composed_headers = self.compose_headers(req, headers, opt, as_dict=True)
 
@@ -71,7 +73,7 @@ class Client(BaseClient):
             files=file_obj
         )
         rq = self.__s.prepare_request(rq)
-        rs = self.__s.send(rq, stream=True, **self.__send_opt)
+        rs = self.__s.send(rq, stream=True, **self.__opt)
 
         resp.apply_with(
             status=rs.status_code,

@@ -591,7 +591,7 @@ class BaseClient(object):
             ret = sorted(self.__schemes__ & set(req.schemes), reverse=True)
         # if schemes are not specified (ex: in OpenApi, take the first one available)
         else:
-            ret = self.__schemes__.copy().pop()
+            return []
 
         if len(ret) == 0:
             raise ValueError('No schemes available: {0}'.format(req.schemes))
