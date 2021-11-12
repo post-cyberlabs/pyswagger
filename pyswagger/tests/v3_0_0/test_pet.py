@@ -41,22 +41,30 @@ class YamlTestCase(unittest.TestCase):
         req, _ = self.app.s('pets').get()
         self.assertRaises(ValueError, req.prepare, scheme=1)
 
+        # Check if operation object has been patched properly
+        req, _ = self.app.s('pets').get()
+        self.assertEqual(req.method,"get")
+        self.assertEqual(req.path,"/pets")
+        self.assertEqual(type(req.url),str)
+        self.assertEqual(req.url,"http://petstore.swagger.io/v1/pets")
+
+
     def test_reset(self):
         """ make sure reseted request could be prepared again """
         req, _ = self.app.s('/pets/{petId}').get(petId="dog")
-        self.assertEqual(req.url, "http://petstore.swagger.io/v1")
+        self.assertEqual(req.url, "http://petstore.swagger.io/v1/pets/{petId}")
         self.assertEqual(req.path, "/pets/{petId}")
 
         req.prepare()
-        self.assertEqual(req.url, "http://petstore.swagger.io/v1")
+        self.assertEqual(req.url, "http://petstore.swagger.io/v1/pets/dog")
         self.assertEqual(req.path, "/pets/dog")
 
         req.prepare()
-        self.assertEqual(req.url, "http://petstore.swagger.io/v1")# req.url.startswith('http:http:'))
+        self.assertEqual(req.url, "http://petstore.swagger.io/v1/pets/dog")# req.url.startswith('http:http:'))
         self.assertEqual(req.path, "/pets/dog")
 
         req.reset()
-        self.assertEqual(req.url, "http://petstore.swagger.io/v1")# req.url.startswith('http:http:'))
+        self.assertEqual(req.url, "http://petstore.swagger.io/v1/pets/{petId}")# req.url.startswith('http:http:'))
         self.assertEqual(req.path, "/pets/{petId}")
 
     def test_op(self):
