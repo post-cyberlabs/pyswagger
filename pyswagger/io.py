@@ -260,7 +260,8 @@ class Request(object):
 
         :type: str
         """
-        return self.__url.geturl()
+        fullurl = self.__url._replace(path=self.__url.path+self.__path)
+        return fullurl.geturl()
 
     @property
     def path(self):
