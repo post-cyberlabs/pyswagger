@@ -186,13 +186,6 @@ class Primitive(object):
         ctx['guard'].update(obj)
 
         ret = None
-        schema = deref(obj.schema)
-
-        if schema.type:
-            print(schema.__dict__)
-            creater, _2nd = self.get(_type=schema.type, _format=schema.format)
-            if not creater:
-                raise ValueError('Can\'t resolve type from:(' + str(schema.type) + ', ' + str(schema.format) + ')')
 
             ret = creater(obj, val, ctx)
             if _2nd:
