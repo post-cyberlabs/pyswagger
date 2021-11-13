@@ -191,7 +191,7 @@ class Primitive(object):
             if _2nd:
                 val = _2nd(obj, ret, val, ctx)
                 ctx['2nd_pass'] = _2nd
-        elif len(schema.properties) or schema.additionalProperties:
+        elif len(obj.properties) or obj.additionalProperties:
             ret = Model()
             val = ret.apply_with(obj, val, ctx)
 

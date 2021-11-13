@@ -61,7 +61,6 @@ setattr(SchemaContext, '__swagger_child__', {
     # solution for properties with 2 possible types
 #    'additionalProperties': (None, AdditionalPropertiesContext),
     'allOf': (ContainerType.list_, SchemaContext),
-    'anyOf': (ContainerType.list_, SchemaContext),
 #    'xml': (None, XMLObjectContext),
 #    'externalDocs': (None, ExternalDocumentationContext),
 })
