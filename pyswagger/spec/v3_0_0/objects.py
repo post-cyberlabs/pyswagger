@@ -201,6 +201,7 @@ class Schema(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'deprecated': None,
 
         'allOf': [],
+        'anyOf': [],
         #'one_of': dict(key='oneOf', builder=rename),
         #'any_of': dict(key='anyOf', builder=rename),
         #'not_': dict(key='not', builder=rename),

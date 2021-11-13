@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from ..utils import deref, CycleGuard
+from ..errs import ValidationError
 from ._int import create_int, validate_int
 from ._str import create_str, validate_str, validate_email_
 from ._bool import create_bool
@@ -14,6 +15,11 @@ from .comm import create_obj, _2nd_pass_obj
 from .render import Renderer
 from .codec import MimeCodec
 import functools
+import logging
+
+
+logger = logging.getLogger(__name__)
+
 
 # TODO: enum is suitable for all types, not only string
 
@@ -264,6 +270,33 @@ class Primitive(object):
             if ret:
                 for a in not_applied:
                     val = _apply(a, ret, val, ctx)
+
+        # handle anyOf for Schema Object
+        anyOf = getattr(obj, 'anyOf', None)
+        if anyOf:
+            not_applied = []
+            excs = []
+            for a in anyOf:
+                a = deref(a)
+                print("anyOf item",a,a.__dict__)
+                if not ret:
+                    # try to find the right type for this primitive
+                    print("case1")
+                    try:
+                        ret = self.produce(a, val, ctx)
+                    except Exception as ex:
+                        logger.warning("Cannot produce with value %s: %s" % (val, str(ex)))
+                        excs.append(ex)
+                    print("ret:",ret)
+                else:
+                    print("case2")
+                    val = _apply(a, ret, val,ctx)
+                    print("val:",val)
+
+            # if we cannot find a matching object, its time to raise the exception
+            if not ret and excs:
+                # Raise the first one
+                raise ValidationError("%s is not a valid value for any of the conditions: %s" % (val, " / ".join(list(map(lambda x: str(x), excs)))))
 
         if ret != None and hasattr(ret, 'cleanup'):
             val = ret.cleanup(val, ctx)
