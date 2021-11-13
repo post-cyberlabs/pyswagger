@@ -3,6 +3,7 @@ from ..base import BaseObj, FieldMeta
 from ...utils import final
 from ...io import Request as IORequest
 from ...io import Response as IOResponse
+from ...primitives import Array
 import six
 
 
