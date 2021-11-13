@@ -156,11 +156,30 @@ class Primitive(object):
 
         :return: the created primitive
         """
+        '''
+        From OpenAPI (v3), Parameter object uses fixed fields:
+            name
+            in
+            description
+            required
+            deprecated
+            allowEmptyValue
+        Rules for serialisation can be specified for simple scenarios using style and schema:
+            style
+            explode
+            allowReserved
+            schema (can be ref)
+            example
+            examples (can be ref)
+        Rules for complex scenarios are specified using the content property
+        schema and content are mutually exclusive
+        '''
+        obj = deref(obj)
+
         val = obj.default if val == None else val
         if val == None:
             return None
 
-        obj = deref(obj)
         ctx = {} if ctx == None else ctx
         if 'name' not in ctx and hasattr(obj, 'name'):
             ctx['name'] = obj.name
@@ -185,7 +204,21 @@ class Primitive(object):
         # cycle guard
         ctx['guard'].update(obj)
 
+        # Retrieve or act from schema object
+        # For Dwagger2, schema is either the schema property or a copy of the object itself
+        # Note that this function is recursive
+        # so we are maybe calling with the schema instead of the objects
+        if hasattr(obj, "schema"):
+            schema = deref(obj.schema)
+            return self.produce(schema, val, ctx)
+
         ret = None
+
+        if obj.type:
+            print(obj.__dict__)
+            creater, _2nd = self.get(_type=obj.type, _format=obj.format)
+            if not creater:
+                raise ValueError('Can\'t resolve type from:(' + str(obj.type) + ', ' + str(obj.format) + ')')
 
             ret = creater(obj, val, ctx)
             if _2nd:
@@ -221,7 +254,6 @@ class Primitive(object):
                 if not ret:
                     # try to find right type for this primitive.
                     ret = self.produce(a, val, ctx)
-                    is_member = hasattr(ret, 'apply_with')
                 else:
                     val = _apply(a, ret, val, ctx)
 
