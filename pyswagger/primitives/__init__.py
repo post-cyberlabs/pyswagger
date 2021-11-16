@@ -154,7 +154,7 @@ class Primitive(object):
             self._map[_type] = {}
         self._map[_type][_format] = (creater, _2nd_pass)
 
-    def produce(self, obj, val, ctx=None):
+    def produce(self, obj, val, ctx=None, name=None, required=None):
         """ factory function to create primitives
 
         :param pyswagger.spec.v2_0.objects.Schema obj: spec to construct primitives
@@ -181,10 +181,6 @@ class Primitive(object):
         schema and content are mutually exclusive
         '''
         obj = deref(obj)
-
-        val = obj.default if val == None else val
-        if val == None:
-            return None
 
         ctx = {} if ctx == None else ctx
         if 'name' not in ctx and hasattr(obj, 'name'):
@@ -214,18 +210,28 @@ class Primitive(object):
         # For Dwagger2, schema is either the schema property or a copy of the object itself
         # Note that this function is recursive
         # so we are maybe calling with the schema instead of the objects
+        if name == None:
+            name = getattr(obj, 'name', None)
         if hasattr(obj, "schema"):
             schema = deref(obj.schema)
-            return self.produce(schema, val, ctx)
+            if name == None:
+                name = ctx.get('name', None)
+            if required == None:
+                required = getattr(obj, 'required', None)
+            return self.produce(schema, val, ctx, name=name, required=required)
+
+        # Check default and required values for simple types
+        val = obj.default if val == None else val
+        if val == None:
+            if required==True:
+                raise ValueError('requires parameter: ' + name)
 
         ret = None
 
         if obj.type:
-            print(obj.__dict__)
             creater, _2nd = self.get(_type=obj.type, _format=obj.format)
             if not creater:
                 raise ValueError('Can\'t resolve type from:(' + str(obj.type) + ', ' + str(obj.format) + ')')
-
             ret = creater(obj, val, ctx)
             if _2nd:
                 val = _2nd(obj, ret, val, ctx)

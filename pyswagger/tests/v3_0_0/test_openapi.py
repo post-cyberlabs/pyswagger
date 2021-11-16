@@ -29,6 +29,13 @@ class OpenAPITestCase(unittest.TestCase):
         print(self.app.s('/').get.url.geturl())
         self.assertEqual(self.app.s('/').get.url.geturl(), "https://developer.uspto.gov/ds-api")
 
+    def test_body_data(self):
+        op = self.app.s('/{dataset}/{version}/records').post
+        print(op,op.requestBody.__dict__)
+        self.assertTrue('application/x-www-form-urlencoded' in op.requestBody.content)
+        self.assertEqual(op.requestBody.content['application/x-www-form-urlencoded'].schema.type,'object')
+        self.assertTrue('start' in op.requestBody.content['application/x-www-form-urlencoded'].schema.properties)
+        self.assertEqual(op.requestBody.content['application/x-www-form-urlencoded'].schema.properties['start'].type,'integer')
 
 class OpenAPITestCaseNoServerVariables(unittest.TestCase):
     """ test OpenAPI (v3) specific features """

@@ -167,7 +167,6 @@ paths:
                     record objects. Each record structure would consist of all
                     the fields and their corresponding values.
                   type: string
-                  default: '*:*'
                 start:
                   description: Starting record number. Default value is 0.
                   type: integer

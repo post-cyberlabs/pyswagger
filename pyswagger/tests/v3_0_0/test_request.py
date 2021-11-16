@@ -3,11 +3,11 @@
 from pyswagger import App, io, primitives
 import pyswagger.contrib.client.requests
 from ..utils import get_test_data_folder
+from ...errs import SchemaError
 import unittest
 import os
 import six
 import json
-
 
 class RequestTestCase(unittest.TestCase):
     """ test Request """
@@ -83,3 +83,55 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(req.path,"/pets")
         self.assertEqual(type(req.url),str)
         self.assertEqual(req.url,"http://petstore.swagger.io/v1/pets")
+
+
+class RequestDataTestCase(unittest.TestCase):
+    """ test Request """
+
+    @classmethod
+    def setUpClass(kls):
+        kls.app = App.create(get_test_data_folder(
+            version='3.0.0',
+            which="uspto.yaml"
+        ))
+
+    def testPostParams(self):
+
+        # the query model should failed as we removed the default for the criteria variable (a post data item)
+        self.assertRaises(ValueError, self.app.op['perform-search'], version="1",dataset="animals")
+
+        req,resp = self.app.op['perform-search'](version="1",dataset="animals",criteria="*")
+        op = self.app.s('/{dataset}/{version}/records').post
+
+        print(op.requestBody.content['application/x-www-form-urlencoded'].schema.__dict__)
+
+        # Providing an invalid parameter raises an error
+        self.assertRaises(ValueError, op, version="1",dataset="animals",blah="bluh")
+
+        print(req.__dict__)
+
+        print('request.url: {0}'.format(req.url))
+        print('request.header: {0}'.format(req.header))
+        print('request.query: {0}'.format(req.query))
+        print('request.file: {0}'.format(req.files))
+        print('request.schemes: {0}'.format(req.schemes))
+        print('request.body: {0}'.format(req.body))
+        print('request.data: {0}'.format(req.data))
+        req.prepare()
+
+
+        #self.assertRaises(SchemaError, req.prepare)
+
+        req.consume('application/x-www-form-urlencoded')
+
+        req.prepare()
+
+        print('request.url: {0}'.format(req.url))
+        print('request.header: {0}'.format(req.header))
+        print('request.query: {0}'.format(req.query))
+        print('request.file: {0}'.format(req.files))
+        print('request.schemes: {0}'.format(req.schemes))
+        print('request.body: {0}'.format(req.body))
+        print('request.data: {0}'.format(req.data))
+
+        #self.assertEqual(req,"blah")

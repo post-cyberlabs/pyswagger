@@ -3,7 +3,7 @@ from ..base import BaseObj, FieldMeta
 from ...utils import final
 from ...io import Request as IORequest
 from ...io import Response as IOResponse
-from ...primitives import Array
+from ...primitives import Array, Model
 import six
 
 
@@ -182,7 +182,7 @@ class Schema(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'uniqueItems': None,
         'maxProperties': None,
         'minProperties': None,
-        'required': None,
+        'required': [],
         'enum': None,
         'type': None, # Can be an array
         'items': None, # Must by an object not an array)
@@ -280,6 +280,7 @@ class Parameter(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'allowReserved': None,
         'example': None,
         'schema': None,
+        'content': None,
     }
 
 #    __children__ = {
@@ -339,6 +340,9 @@ class MediaType(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'examples': None,
         'encoding': None,
     }
+
+    def _prim_(self, v, prim_factory, ctx=None):
+        return prim_factory.produce(self.schema, v, ctx)
 
 #    __children__ = {
 #        'schema': dict(child_builder=SchemaOrReference),
@@ -517,41 +521,65 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
 
     def __call__(self, **k):
         # prepare parameter set
-        params = dict(header={}, query=[], path={}, body={}, formData=[], file={})
+        params = dict(header=[], query=[], path=[], body=[], formData=[], file=[])
         names = []
-        def _convert_parameter(p):
-            if p.name not in k and not p.is_set("default") and p.required:
-                raise ValueError('requires parameter: ' + p.name)
+        def _convert_parameter(p, schema=None, name=None):
+            # At this point we are loading provided
+            # arguments based on the swagger description
 
-            if p.is_set("default"):
-                v = k.get(p.name, p.default)
-            else:
-                if p.name in k:
-                    v = k[p.name]
-                else:
-                    # do not provide value for parameters that use didn't specify.
-                    return
+            # do not handle default or requirements manually
+            # as this should be handled by the Primitive generation class
+            v = k.get(name, None)
 
-            c = p._prim_(v, self._prim_factory, ctx=dict(read=False))
-            i = getattr(p, 'in')
+            # transform using the prim factory associated
+            # to the datatype when patching the object
+            c = p._prim_(v, self._prim_factory, ctx=dict(read=False,name=name,params=k))
 
-            if p.schema.type == 'file':
-                params['file'][p.name] = c
+            # do not provide value for parameters that user didn't specify.
+            if c == None:
+                return
+
+            # check parameter location
+            #i = 'formData'
+            i = getattr(p, 'in', name)
+
+            # if the data specification is a file
+            if schema.type == 'file':
+                params['file'].append((name,c))
+            # If It is a GET / POST parameter
             elif i in ('query', 'formData'):
                 if isinstance(c, Array):
                     if p.items.type == 'file':
-                        params['file'][p.name] = c
+                        params['file'].append((name, c))
                     else:
-                        params[i].extend([tuple([p.name, v]) for v in c.to_url()])
+                        params[i].extend([tuple([name, v]) for v in c.to_url()])
                 else:
-                    params[i].append((p.name, str(c),))
+                    # formData will be converted to real data by marshaller
+                    params[i].append((name, c))
             else:
-                params[i][p.name] = str(c) if i != 'body' else c
+                # formData will be converted to real data by marshaller
+                params[i].append((name, c))
 
-            names.append(p.name)
+            if isinstance(c, Model):
+                names.extend(list(c.keys()))
+            else:
+                names.append(name)
 
         for p in self.parameters:
-            _convert_parameter(final(p))
+            p = final(p)
+            if p.content:
+                for mediatype in p.content:
+                    params[mediatype] = []
+                    _content = final(p.content[mediatype])
+                    _convert_parameter(_content, _content.schema, p.name)
+            else:
+                _convert_parameter(p, p.schema, p.name)
+
+        if self.requestBody:
+            for mediatype in self.requestBody.content:
+                params[mediatype] = []
+                p = final(self.requestBody.content[mediatype])
+                _convert_parameter(p, p.schema, mediatype)
 
         # check for unknown parameter
         unknown = set(six.iterkeys(k)) - set(names)

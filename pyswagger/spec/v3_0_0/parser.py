@@ -125,23 +125,6 @@ class AdditionalPropertiesContext(Context):
 #    'externalDocs': (None, ExternalDocumentationContext),
 #})
 
-
-
-class ParameterContext(Context):
-    """ Context of Parameter Object, along with
-    Reference Object
-    """
-
-    __swagger_child__ = {
-        'schema': (None, SchemaContext),
-        # items here should refer to an Items Object.
-        # refer to https://github.com/swagger-api/swagger-spec/issues/165
-        # for details
-    }
-
-    __swagger_ref_object__ = Parameter
-
-
 class HeaderContext(Context):
     """ Context of Header Object
     """
@@ -154,7 +137,6 @@ class HeaderContext(Context):
     }
 
     __swagger_ref_object__ = Header
-
 
 class EncodingContext(Context):
     __swagger_ref_object__ = Encoding
@@ -179,6 +161,21 @@ class MediaTypeContext(Context):
 #        'schema': dict(child_builder=SchemaOrReference),
 #        'examples': dict(child_builder=ExampleOrReference),
 #        'encoding': dict(child_builder=map_(Encoding)),
+
+class ParameterContext(Context):
+    """ Context of Parameter Object, along with
+    Reference Object
+    """
+
+    __swagger_child__ = {
+        'schema': (None, SchemaContext),
+        'content': (ContainerType.dict_, MediaTypeContext),
+        # items here should refer to an Items Object.
+        # refer to https://github.com/swagger-api/swagger-spec/issues/165
+        # for details
+    }
+
+    __swagger_ref_object__ = Parameter
 
 class ServerVariableContext(Context):
 
