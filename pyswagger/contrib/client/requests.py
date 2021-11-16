@@ -57,18 +57,26 @@ class Client(BaseClient):
             else:
                 file_obj.append((name, (obj.filename, f)))
 
-        for k, v in six.iteritems(req.files):
+        for k, v in req.files:
             if isinstance(v, list):
                 for vv in v:
                     append(k, vv)
             else:
                 append(k, v)
 
+        # Retrieve the prepared parameter set
+        # can be one of the two forms:
+        # (param_name_or_mimetype, [(name,value),(name2,value2),...])
+        # (param_name_or_mimetype, {name:value,name2:value2})
+        data = None
+        if len(req.data) > 0:
+            data = req.data[-1][1]
+
         rq = Request(
             method=req.method.upper(),
             url=req.url,
             params=req.query,
-            data=req.data,
+            data=data,
             headers=composed_headers,
             files=file_obj
         )

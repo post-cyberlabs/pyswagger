@@ -38,12 +38,13 @@ class Request(object):
         self.__consume = None
         self.__produce = None
         self.__scheme = None
+        self.__data = []
 
     def reset(self):
         self.__url = self.__op.url
         self.__path = self.__op.path
         self.__header = CaseInsensitiveDict()
-        self.__data = None
+        self.__data = []
 
     def consume(self, consume):
         self.__consume = consume
@@ -53,21 +54,25 @@ class Request(object):
         self.__produce = produce
         return self
 
-    def _prepare_forms(self):
+    def _prepare_forms(self, data):
         """ private function to prepare content for paramType=form
         """
         content_type = 'application/x-www-form-urlencoded'
+        # Todo: OpenAPI uses requestBody/content[MediaType] instead of consumes
         if self.__op.consumes and content_type not in self.__op.consumes:
             raise errs.SchemaError('content type {0} does not present in {1}'.format(content_type, self.__op.consumes))
 
-        return content_type, six.moves.urllib.parse.urlencode(self.__p['formData'])
+        return content_type, six.moves.urllib.parse.urlencode(data)
 
-    def _prepare_body(self):
+    def _prepare_body(self, data, default_content_type='application/json'):
         """ private function to prepare content for paramType=body
         """
         content_type = self.__consume
+
+        # Todo: OpenAPI uses requestBody/content[MediaType] instead of consumes
         if not content_type:
-            content_type = self.__op.consumes[0] if self.__op.consumes else 'application/json'
+            content_type = self.__op.consumes[0] if self.__op.consumes else default_content_type
+
         if self.__op.consumes and content_type not in self.__op.consumes:
             raise errs.SchemaError('content type {0} does not present in {1}'.format(content_type, self.__op.consumes))
 
@@ -80,14 +85,16 @@ class Request(object):
                 _type = schema.type
                 _format = schema.format
                 name = schema.name
-                body = self.__p['body'][parameter.name]
+                body = data[parameter.name]
                 return content_type, self.__op._mime_codec.marshal(content_type, body, _type=_type, _format=_format, name=name)
+
         return None, None
 
-    def _prepare_files(self, encoding):
+    def _prepare_files(self, encoding, data):
         """ private function to prepare content for paramType=form with File
         """
         content_type = 'multipart/form-data'
+        # Todo: OpenAPI uses requestBody/content[MediaType] instead of consumes
         if self.__op.consumes and content_type not in self.__op.consumes:
             raise errs.SchemaError('content type {0} does not present in {1}'.format(content_type, self.__op.consumes))
 
@@ -118,11 +125,11 @@ class Request(object):
                 with open(obj.filename, 'rb') as f:
                     body.write(f.read())
             else:
-                data = obj.data.read()
-                if isinstance(data, six.text_type):
-                    w(body).write(data)
+                filedata = obj.data.read()
+                if isinstance(filedata, six.text_type):
+                    w(body).write(filedata)
                 else:
-                    body.write(data)
+                    body.write(filedata)
 
             body.write(six.b('\r\n'))
 
@@ -138,7 +145,7 @@ class Request(object):
             body.write(six.b('\r\n'))
 
         # begin of file section
-        for k, v in six.iteritems(self.__p['file']):
+        for k, v in six.iteritems(data):
             if isinstance(v, list):
                 for vv in v:
                     append(k, vv)
@@ -191,7 +198,7 @@ class Request(object):
         # combine path parameters into path
         # TODO: 'dot' is allowed in swagger, but it won't work in python-format
         path_params = {}
-        for k, v in six.iteritems(self.__p['path']):
+        for k, v in self.__p['path']:
             path_params[k] = six.moves.urllib.parse.quote_plus(v)
 
         # combine path parameters into url
@@ -206,23 +213,32 @@ class Request(object):
 
         # update data parameter
         content_type = None
+        if self.__p['body']:
+            content_type, data = self._prepare_body(self.__p['body'])
+            self.__data.append((content_type,data))
+
         if self.__p['file']:
             if handle_files:
-                content_type, self.__data = self._prepare_files(encoding)
+                content_type, data = self._prepare_files(encoding,self.__p['file'])
+                self.__data.append((content_type,data))
             else:
                 # client that can encode multipart/form-data, should
                 # access form-data via data property and file from file
                 # property.
 
                 # only form data can be carried along with files,
-                self.__data = self.__p['formData']
+                content_type = "multipart/form-data"
+                self.__data.append((content_type, self.__p['formData']))
 
-        elif self.__p['formData']:
-            content_type, self.__data = self._prepare_forms()
-        elif self.__p['body']:
-            content_type, self.__data = self._prepare_body()
-        else:
-            self.__data = None
+        if self.__p['formData']:
+            content_type, data = self._prepare_forms(self.__p['formData'])
+            self.__data.append((content_type,data))
+
+        if self.__consume != None:
+            if self.__consume in self.__p:
+                print(self.__p)
+                content_type, data = self._prepare_body(self.__p[self.__consume][-1][1])
+                self.__data.append((content_type,data))
 
         if content_type:
             self.__header.update({'Content-Type': content_type})
@@ -311,6 +327,15 @@ class Request(object):
         :type: dict of (name, primitives.File)
         """
         return self.__p['file']
+
+    @property
+    def body(self):
+        """ body of this Request
+
+        :type: dict of (name, primitives)
+        """
+        return self.__p['body']
+
 
     @property
     def schemes(self):
