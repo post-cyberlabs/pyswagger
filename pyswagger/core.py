@@ -332,6 +332,9 @@ class App(object):
             for r in result:
                 logger.error(r)
             raise errs.ValidationError('this Swagger App contains error: {0}.'.format(len(result)))
+        else:
+            for r in result:
+                logger.warning(r)
 
         return result
 
