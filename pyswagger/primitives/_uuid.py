@@ -19,6 +19,8 @@ class UUID(object):
         :param val: things used to construct uuid
         :type val: uuid as byte, string, or uuid.UUID
         """
+        if val == None:
+            return None
         if isinstance(val, uuid.UUID):
             self.v = val
         elif isinstance(val, six.string_types):

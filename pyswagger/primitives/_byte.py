@@ -12,6 +12,8 @@ class Byte(object):
 
         :param str v: accept six.string_types, six.binary_type
         """
+        if v == None:
+            return None
         if isinstance(v, six.binary_type):
             self.v = v
         elif isinstance(v, six.string_types):
@@ -27,5 +29,3 @@ class Byte(object):
         we should exchange 'byte' type via base64 encoding.
         """
         return base64.urlsafe_b64encode(self.v).decode('utf-8')
-
-

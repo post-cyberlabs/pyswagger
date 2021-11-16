@@ -11,8 +11,8 @@ def validate_float(obj, ret, val, ctx):
     return val
 
 def create_float(obj, v, ctx=None):
+    if v == None:
+        return None
     r = float(v)
     validate_float(obj, r, v, ctx)
     return r
-
-

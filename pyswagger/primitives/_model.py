@@ -20,6 +20,7 @@ class Model(dict):
         :param obj.Model obj: model object to instruct how to create this model
         :param dict val: things used to construct this model
         """
+        val = val or ctx['params']
         for k, v in six.iteritems(val):
             if k in obj.properties:
                 pobj = obj.properties.get(k)

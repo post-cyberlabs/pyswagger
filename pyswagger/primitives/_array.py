@@ -17,6 +17,8 @@ class Array(list):
     def apply_with(self, obj, val, ctx):
         """
         """
+        if val == None:
+            val = []
         self.__collection_format = getattr(obj, 'collectionFormat', 'csv')
 
         if isinstance(val, six.string_types):
@@ -88,5 +90,3 @@ class Array(list):
             return [str(s) for s in self]
         else:
             return [str(self)]
-
-
