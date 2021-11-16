@@ -13,7 +13,7 @@ class Byte(object):
         :param str v: accept six.string_types, six.binary_type
         """
         if v == None:
-            return None
+            return "byte"
         if isinstance(v, six.binary_type):
             self.v = v
         elif isinstance(v, six.string_types):

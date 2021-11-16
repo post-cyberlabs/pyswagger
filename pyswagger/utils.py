@@ -102,9 +102,14 @@ class CycleGuard(object):
 
     def update(self, obj):
         if obj in self.__visited:
-            raise CycleDetectionError('Cycle detected: {0}'.format(getattr(obj, '$ref', None)))
+            raise CycleDetectionError('Cycle detected: {0} ref:{1}'.format(obj,getattr(obj, '$ref', None)))
         self.__visited.append(obj)
 
+    def __str__(self):
+        return "<CycleGuard %s>" % self.__visited
+
+    def __repr__(self):
+        return self.__str__()
 
 # TODO: this function and datetime don't handle leap-second.
 #       check if dateutil handle it or not
@@ -266,6 +271,7 @@ def deref(obj, guard=None):
     """ dereference $ref
     """
     cur, guard = obj, guard or CycleGuard()
+
     guard.update(cur)
     while cur and getattr(cur, 'ref_obj', None) != None:
         cur = cur.ref_obj

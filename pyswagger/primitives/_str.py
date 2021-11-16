@@ -17,7 +17,7 @@ def validate_str(obj, ret, val, ctx):
 
 def create_str(obj, v, ctx=None):
     if v == None:
-        return None
+        return "string"
     if isinstance(v, six.string_types):
         r = v
     else:

@@ -155,6 +155,7 @@ class Primitive(object):
         self._map[_type][_format] = (creater, _2nd_pass)
 
     def produce(self, obj, val, ctx=None, name=None, required=None):
+        ctx = {} if ctx == None else ctx
         """ factory function to create primitives
 
         :param pyswagger.spec.v2_0.objects.Schema obj: spec to construct primitives
@@ -182,11 +183,11 @@ class Primitive(object):
         '''
         obj = deref(obj)
 
-        ctx = {} if ctx == None else ctx
         if 'name' not in ctx and hasattr(obj, 'name'):
             ctx['name'] = obj.name
         if 'guard' not in ctx:
             ctx['guard'] = CycleGuard()
+
         if 'addp_schema' not in ctx:
             # Schema Object of additionalProperties
             ctx['addp_schema'] = None
@@ -202,12 +203,15 @@ class Primitive(object):
         if 'read' not in ctx:
             # default is in 'read' context
             ctx['read'] = True
+        if 'introspect' not in ctx:
+            # default is do not introspect, raise errors
+            ctx['introspect'] = False
 
         # cycle guard
         ctx['guard'].update(obj)
 
         # Retrieve or act from schema object
-        # For Dwagger2, schema is either the schema property or a copy of the object itself
+        # For Swagger2, schema is either the schema property or a copy of the object itself
         # Note that this function is recursive
         # so we are maybe calling with the schema instead of the objects
         if name == None:
@@ -218,12 +222,11 @@ class Primitive(object):
                 name = ctx.get('name', None)
             if required == None:
                 required = getattr(obj, 'required', None)
-            return self.produce(schema, val, ctx, name=name, required=required)
-
+            return self.produce(schema, val, ctx=ctx, name=name, required=required)
         # Check default and required values for simple types
         val = obj.default if val == None else val
         if val == None:
-            if required==True:
+            if required==True and not ctx['introspect']:
                 raise ValueError('requires parameter: ' + name)
 
         ret = None
@@ -232,13 +235,13 @@ class Primitive(object):
             creater, _2nd = self.get(_type=obj.type, _format=obj.format)
             if not creater:
                 raise ValueError('Can\'t resolve type from:(' + str(obj.type) + ', ' + str(obj.format) + ')')
-            ret = creater(obj, val, ctx)
+            ret = creater(obj, val, ctx=ctx)
             if _2nd:
-                val = _2nd(obj, ret, val, ctx)
+                val = _2nd(obj, ret, val, ctx=ctx)
                 ctx['2nd_pass'] = _2nd
         elif len(obj.properties) or obj.additionalProperties:
             ret = Model()
-            val = ret.apply_with(obj, val, ctx)
+            val = ret.apply_with(obj, val, ctx=ctx)
 
         if isinstance(ret, (Date, Datetime, Byte, File)):
             # it's meanless to handle allOf for these types.
@@ -284,20 +287,15 @@ class Primitive(object):
             excs = []
             for a in anyOf:
                 a = deref(a)
-                print("anyOf item",a,a.__dict__)
                 if not ret:
                     # try to find the right type for this primitive
-                    print("case1")
                     try:
                         ret = self.produce(a, val, ctx)
                     except Exception as ex:
                         logger.warning("Cannot produce with value %s: %s" % (val, str(ex)))
                         excs.append(ex)
-                    print("ret:",ret)
                 else:
-                    print("case2")
                     val = _apply(a, ret, val,ctx)
-                    print("val:",val)
 
             # if we cannot find a matching object, its time to raise the exception
             if not ret and excs:

@@ -242,7 +242,7 @@ class BaseObj(object):
         """
         f = self.__swagger_rename__[f] if f in self.__swagger_rename__.keys() else f
         return '_' + self.__class__.__name__ + '__' + f
- 
+
     def update_field(self, f, obj):
         """ update a field
 
@@ -323,7 +323,7 @@ class BaseObj(object):
             ct, cctx = childs[0][1], childs[0][2]
             self.update_field(name,
                 container_apply(
-                    ct, v, 
+                    ct, v,
                     functools.partial(_produce_new_obj, cctx)
             ))
 
@@ -390,6 +390,12 @@ class BaseObj(object):
 
         return True, ''
 
+    def __str__(self):
+        return "<%s %s id=%s>" % (self.__class__.__name__,getattr(self,"name","unnamed"),id(self))
+
+    def __repr__(self):
+        return self.__str__()
+
     def dump(self):
         """ dump Swagger Spec in dict(which can be
         convert to JSON)
@@ -445,7 +451,7 @@ class BaseObj(object):
         for n in six.iterkeys(self.__swagger_fields__):
             new_n = self.__swagger_rename__.get(n, None)
             ret.append(new_n) if new_n else ret.append(n)
-        
+
         return ret
 
     @property
@@ -533,4 +539,3 @@ class NullContext(Context):
 
     def __init__(self):
         super(NullContext, self).__init__(None, None)
-

@@ -519,67 +519,94 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'method': None,
     }
 
-    def __call__(self, **k):
-        # prepare parameter set
-        params = dict(header=[], query=[], path=[], body=[], formData=[], file=[])
-        names = []
-        def _convert_parameter(p, schema=None, name=None):
-            # At this point we are loading provided
-            # arguments based on the swagger description
+    def _parameters_iter(self, p, schema=None, name=None, parameters={}, introspect=False):
+        # At this point we are loading provided
+        # arguments based on the swagger description
 
-            # do not handle default or requirements manually
-            # as this should be handled by the Primitive generation class
-            v = k.get(name, None)
+        # do not handle default or requirements manually
+        # as this should be handled by the Primitive generation class
+        v = parameters.get(name, None)
 
-            # transform using the prim factory associated
-            # to the datatype when patching the object
-            c = p._prim_(v, self._prim_factory, ctx=dict(read=False,name=name,params=k))
+        # transform using the prim factory associated
+        # to the datatype when patching the object
+        c = p._prim_(v, self._prim_factory, ctx=dict(read=False,name=name,params=parameters,introspect=introspect))
 
-            # do not provide value for parameters that user didn't specify.
-            if c == None:
-                return
+        # do not provide value for parameters that user didn't specify.
+        if c == None and not introspect:
+            return
 
-            # check parameter location
-            #i = 'formData'
-            i = getattr(p, 'in', name)
+        # check parameter location
+        #i = 'formData'
+        i = getattr(p, 'in', name)
 
-            # if the data specification is a file
-            if schema.type == 'file':
-                params['file'].append((name,c))
-            # If It is a GET / POST parameter
-            elif i in ('query', 'formData'):
-                if isinstance(c, Array):
-                    if p.items.type == 'file':
-                        params['file'].append((name, c))
-                    else:
-                        params[i].extend([tuple([name, v]) for v in c.to_url()])
+        # if the data specification is a file
+        if schema.type == 'file':
+            yield('file',name,c)
+        elif isinstance(c, Model):
+            for name,item in c.items():
+                yield(i,name,item)
+        # If It is a GET / POST parameter
+        elif i in ('query', 'formData'):
+            if isinstance(c, Array):
+                if p.items.type == 'file':
+                    yield('file',name,c)
                 else:
-                    # formData will be converted to real data by marshaller
-                    params[i].append((name, c))
+                    for item in c.to_url():
+                        yield(i,name,item)
             else:
                 # formData will be converted to real data by marshaller
-                params[i].append((name, c))
+                yield(i,name,c)
+        else:
+            # formData will be converted to real data by marshaller
+            yield(i,name,c)
 
-            if isinstance(c, Model):
-                names.extend(list(c.keys()))
-            else:
-                names.append(name)
+    def parameters_iter(self):
 
         for p in self.parameters:
             p = final(p)
             if p.content:
                 for mediatype in p.content:
-                    params[mediatype] = []
                     _content = final(p.content[mediatype])
-                    _convert_parameter(_content, _content.schema, p.name)
+                    yield from self._parameters_iter(_content, _content.schema, p.name, introspect=True)
             else:
-                _convert_parameter(p, p.schema, p.name)
+                yield from self._parameters_iter(p, p.schema, p.name, introspect=True)
+
+        if self.requestBody:
+            for mediatype in self.requestBody.content:
+                p = final(self.requestBody.content[mediatype])
+                yield from self._parameters_iter(p, p.schema, mediatype, introspect=True)
+
+    def __call__(self, **k):
+        # prepare parameter set
+        params = dict(header=[], query=[], path=[], body=[], formData=[], file=[])
+        names = []
+        for p in self.parameters:
+            p = final(p)
+            if p.content:
+                for mediatype in p.content:
+                    _content = final(p.content[mediatype])
+                    for ptype,pname,pval in self._parameters_iter(_content, _content.schema, p.name, k):
+                        if ptype not in params:
+                            params[ptype] = []
+                        params[ptype].append((pname,pval))
+                        names.append(pname)
+            else:
+                for ptype,pname,pval in self._parameters_iter(p, p.schema, p.name, k):
+                    if ptype not in params:
+                        params[ptype] = []
+                    params[ptype].append((pname,pval))
+                    names.append(pname)
+
 
         if self.requestBody:
             for mediatype in self.requestBody.content:
                 params[mediatype] = []
                 p = final(self.requestBody.content[mediatype])
-                _convert_parameter(p, p.schema, mediatype)
+                for ptype,pname,pval in self._parameters_iter(p, p.schema, mediatype, k):
+                    if ptype not in params:
+                        params[ptype] = []
+                    params[ptype].append((pname,pval))
+                    names.append(pname)
 
         # check for unknown parameter
         unknown = set(six.iterkeys(k)) - set(names)

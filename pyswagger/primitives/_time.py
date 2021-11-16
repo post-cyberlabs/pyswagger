@@ -27,6 +27,8 @@ class Date(Time):
         :param v: things used to constrcut date
         :type v: timestamp in float, datetime.date object, or ISO-8601 in str
         """
+        if v == None:
+            return "date"
         self.v = None
         if isinstance(v, float):
             self.v = datetime.date.fromtimestamp(v)
@@ -48,6 +50,8 @@ class Datetime(Time):
         :param v: things used to constrcut date
         :type v: timestamp in float, datetime.datetime object, or ISO-8601 in str
         """
+        if v == None:
+            return "datetime"
         self.v = None
         if isinstance(v, float):
             self.v = datetime.datetime.utcfromtimestamp(v)
@@ -57,5 +61,3 @@ class Datetime(Time):
             self.v = from_iso8601(v)
         else:
             raise ValueError('Unrecognized type for Datetime: ' + str(type(v)))
-
-
