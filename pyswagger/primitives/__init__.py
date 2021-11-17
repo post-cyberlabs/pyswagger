@@ -230,7 +230,7 @@ class Primitive(object):
                 raise ValueError('requires parameter: ' + name)
 
         ret = None
-
+        properties = []
         if obj.properties:
             properties = deref(obj.properties)
         if obj.type:
