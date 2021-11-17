@@ -236,7 +236,6 @@ class Request(object):
 
         if self.__consume != None:
             if self.__consume in self.__p:
-                print(self.__p)
                 content_type, data = self._prepare_body(self.__p[self.__consume][-1][1])
                 self.__data.append((content_type,data))
 
