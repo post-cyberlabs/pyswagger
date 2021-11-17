@@ -96,7 +96,6 @@ class LocalGetter(Getter):
                     break
             else:
                 for e in [private.FILE_EXT_JSON, private.FILE_EXT_YAML, private.FILE_EXT_YML]:
-                    #print(path + '.' + e)
                     if os.path.isfile(path + '.' + e):
                         self.urls = [path + '.' + e]
                         break

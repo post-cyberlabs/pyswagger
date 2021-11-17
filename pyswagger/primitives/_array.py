@@ -3,6 +3,7 @@ from ..errs import ValidationError, SchemaError
 from ..utils import deref
 import functools
 import six
+import json
 
 
 class Array(list):
@@ -13,14 +14,14 @@ class Array(list):
         """ v: list or string_types
         """
         super(Array, self).__init__()
-        self.__collection_format = 'csv'
+        self.__collection_format = 'raw'
 
     def apply_with(self, obj, val, ctx):
         """
         """
         if val == None:
             val = []
-        self.__collection_format = getattr(obj, 'collectionFormat', 'csv')
+        self.__collection_format = getattr(obj, 'collectionFormat', 'raw')
 
         if isinstance(val, six.string_types):
             if self.__collection_format == 'csv':
@@ -31,6 +32,8 @@ class Array(list):
                 val = val.split('\t')
             elif self.__collection_format == 'pipes':
                 val = val.split('|')
+            elif self.__collection_format == 'json':
+                val = json.loads(val)
             else:
                 raise SchemaError("Unsupported collection format '{0}' when converting array: {1}".format(self.__collection_format, val))
 
@@ -49,9 +52,11 @@ class Array(list):
 
         if obj.items:
             items = deref(obj.items)
-            print(items.__dict__)
             if items:# and len(val):
-                self.extend(map(functools.partial(ctx['factory'].produce, obj.items), val))
+                # If no value is provided and introspect, let generate at least one item
+                if not len(val) and ctx['introspect']:
+                    val = [None]
+                self.extend(map(functools.partial(ctx['factory'].produce, obj.items, ctx=ctx), val))
                 val = []
 
         # init array as list
@@ -83,6 +88,10 @@ class Array(list):
             return _conv('\t')
         elif self.__collection_format == 'pipes':
             return _conv('|')
+        elif self.__collection_format == 'raw':
+            return list.__str__(self)
+        elif self.__collection_format == 'json':
+            return json.dumps(self)
         else:
             raise SchemaError('Unsupported collection format when converting to str: {0}'.format(self.__collection_format))
 
