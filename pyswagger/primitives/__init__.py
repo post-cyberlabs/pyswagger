@@ -231,6 +231,8 @@ class Primitive(object):
 
         ret = None
 
+        if obj.properties:
+            properties = deref(obj.properties)
         if obj.type:
             creater, _2nd = self.get(_type=obj.type, _format=obj.format)
             if not creater:
@@ -239,7 +241,7 @@ class Primitive(object):
             if _2nd:
                 val = _2nd(obj, ret, val, ctx=ctx)
                 ctx['2nd_pass'] = _2nd
-        elif len(obj.properties) or obj.additionalProperties:
+        elif len(properties) or obj.additionalProperties:
             ret = Model()
             val = ret.apply_with(obj, val, ctx=ctx)
 

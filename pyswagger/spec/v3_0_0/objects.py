@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from ..base import BaseObj, FieldMeta
-from ...utils import final
+from ...utils import final, deref
 from ...io import Request as IORequest
 from ...io import Response as IOResponse
 from ...primitives import Array, Model
@@ -562,36 +562,47 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
 
     def parameters_iter(self):
 
-        for p in self.parameters:
-            p = final(p)
+        if self.parameters:
+            parameters = deref(self.parameters)
+        for p in parameters:
+            p = deref(p)
             if p.content:
-                for mediatype in p.content:
-                    _content = final(p.content[mediatype])
-                    yield from self._parameters_iter(_content, _content.schema, p.name, introspect=True)
+                content = deref(p.content)
+                for mediatype in content:
+                    _content = deref(content[mediatype])
+                    _schema = deref(_content.schema)
+                    yield from self._parameters_iter(_content, _schema, p.name, introspect=True)
             else:
-                yield from self._parameters_iter(p, p.schema, p.name, introspect=True)
+                _schema = deref(p.schema)
+                yield from self._parameters_iter(p, _schema, p.name, introspect=True)
 
         if self.requestBody:
-            for mediatype in self.requestBody.content:
-                p = final(self.requestBody.content[mediatype])
-                yield from self._parameters_iter(p, p.schema, mediatype, introspect=True)
+            if self.requestBody.content:
+                content = deref(self.requestBody.content)
+                for mediatype in content:
+                    p = deref(content[mediatype])
+                    _schema = deref(p.schema)
+                    yield from self._parameters_iter(p, _schema, mediatype, introspect=True)
 
     def __call__(self, **k):
         # prepare parameter set
         params = dict(header=[], query=[], path=[], body=[], formData=[], file=[])
         names = []
-        for p in self.parameters:
-            p = final(p)
+        for p in deref(self.parameters):
+            p = deref(p)
             if p.content:
-                for mediatype in p.content:
-                    _content = final(p.content[mediatype])
-                    for ptype,pname,pval in self._parameters_iter(_content, _content.schema, p.name, k):
+                content = deref(p.content)
+                for mediatype in content:
+                    _content = deref(content[mediatype])
+                    _schema = deref(_content.schema)
+                    for ptype,pname,pval in self._parameters_iter(_content, _schema, p.name, k):
                         if ptype not in params:
                             params[ptype] = []
                         params[ptype].append((pname,pval))
                         names.append(pname)
             else:
-                for ptype,pname,pval in self._parameters_iter(p, p.schema, p.name, k):
+                _schema = deref(p.schema)
+                for ptype,pname,pval in self._parameters_iter(p, _schema, p.name, k):
                     if ptype not in params:
                         params[ptype] = []
                     params[ptype].append((pname,pval))
@@ -599,14 +610,17 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
 
 
         if self.requestBody:
-            for mediatype in self.requestBody.content:
-                params[mediatype] = []
-                p = final(self.requestBody.content[mediatype])
-                for ptype,pname,pval in self._parameters_iter(p, p.schema, mediatype, k):
-                    if ptype not in params:
-                        params[ptype] = []
-                    params[ptype].append((pname,pval))
-                    names.append(pname)
+            if self.requestBody.content:
+                content = deref(self.requestBody.content)
+                for mediatype in content:
+                    params[mediatype] = []
+                    p = deref(content[mediatype])
+                    _schema = deref(p.schema)
+                    for ptype,pname,pval in self._parameters_iter(p, _schema, mediatype, k):
+                        if ptype not in params:
+                            params[ptype] = []
+                        params[ptype].append((pname,pval))
+                        names.append(pname)
 
         # check for unknown parameter
         unknown = set(six.iterkeys(k)) - set(names)

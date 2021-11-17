@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 from ..errs import ValidationError, SchemaError
+from ..utils import deref
 import functools
 import six
 
@@ -46,9 +47,12 @@ class Array(list):
                 # assume the type is hashable
                 val = set(val)
 
-        if obj.items and len(val):
-            self.extend(map(functools.partial(ctx['factory'].produce, obj.items), val))
-            val = []
+        if obj.items:
+            items = deref(obj.items)
+            print(items.__dict__)
+            if items:# and len(val):
+                self.extend(map(functools.partial(ctx['factory'].produce, obj.items), val))
+                val = []
 
         # init array as list
         if obj.minItems and len(self) < obj.minItems:
