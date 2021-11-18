@@ -549,7 +549,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         # If It is a GET / POST parameter
         elif i in ('query', 'formData'):
             if isinstance(c, Array):
-                if p.items.type == 'file':
+                if schema.items.type == 'file':
                     yield('file',name,c)
                 else:
                     for item in c.to_url():
