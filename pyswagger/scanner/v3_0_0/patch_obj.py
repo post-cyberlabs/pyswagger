@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 from ...scan import Dispatcher
-from ...spec.v3_0_0.objects import PathItem, Operation, Schema, OpenApi, Parameter
+from ...spec.v3_0_0.objects import PathItem, Operation, Schema, OpenApi, Parameter, MediaType
 from ...spec.v3_0_0.parser import PathItemContext
 from ...utils import jp_split, scope_split, final, deref
 import six
@@ -116,3 +116,15 @@ class PatchObject(object):
             for key,val in obj.properties.items():
                 if not val.name:
                     val.update_field('name', key)
+
+    @Disp.register([MediaType])
+    def _mediatype(self, path, obj, app):
+        if obj._parent_:
+            #for item in obj._parent_:
+            for key,val in obj._parent_.content.items():
+                if id(obj) == id(val):
+                    if hasattr(obj._parent_,'name'):
+                        obj.update_field('name',obj._parent_.name)
+                    obj.update_field('content_type',key)
+                    if hasattr(obj._parent_,'in'):
+                        obj.update_field('in',getattr(obj._parent_,'in'))

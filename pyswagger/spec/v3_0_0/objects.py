@@ -345,6 +345,11 @@ class MediaType(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
     def _prim_(self, v, prim_factory, ctx=None):
         return prim_factory.produce(self.schema, v, ctx)
 
+    __internal_fields__ = {
+        'name': None,
+        'content_type': None,
+        'in': None,
+    }
 #    __children__ = {
 #        'schema': dict(child_builder=SchemaOrReference),
 #        'examples': dict(child_builder=ExampleOrReference),
