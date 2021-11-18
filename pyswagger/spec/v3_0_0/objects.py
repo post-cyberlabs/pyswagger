@@ -211,6 +211,7 @@ class Schema(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         # pyswagger only
         'ref_obj': None,
         'final': None,
+        'name': None,
     }
 
     def _prim_(self, v, prim_factory, ctx=None):
