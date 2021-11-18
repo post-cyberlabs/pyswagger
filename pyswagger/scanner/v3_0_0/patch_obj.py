@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from ...scan import Dispatcher
 from ...spec.v3_0_0.objects import PathItem, Operation, Schema, OpenApi, Parameter
 from ...spec.v3_0_0.parser import PathItemContext
-from ...utils import jp_split, scope_split, final
+from ...utils import jp_split, scope_split, final, deref
 import six
 import copy
 import logging
@@ -29,7 +29,7 @@ class PatchObject(object):
 
         # combine parameters from PathItem
         if obj._parent_:
-            # Operation parameters ovverride PathItem parameters
+            # Operation parameters override PathItem parameters
             if obj.parameters:
                 for p in obj._parent_.parameters:
                     p_final = final(p)
@@ -106,3 +106,13 @@ class PatchObject(object):
                 obj.update_field('name', scope_split(last_token)[-1])
             else:
                 obj.update_field('name', last_token)
+
+        # patch object name based on its parent name
+        elif not obj.name and obj._parent_ and hasattr(obj._parent_,'name') and obj._parent_.name:
+            obj.update_field('name', obj._parent_.name)
+
+        # Patch names of schema properties
+        if obj.properties:
+            for key,val in obj.properties.items():
+                if not val.name:
+                    val.update_field('name', key)

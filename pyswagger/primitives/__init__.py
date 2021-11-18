@@ -225,13 +225,8 @@ class Primitive(object):
         Rules for complex scenarios are specified using the content property
         schema and content are mutually exclusive
         '''
-        obj = deref(obj)
-
-        if 'name' not in ctx and hasattr(obj, 'name'):
-            ctx['name'] = obj.name
         if 'guard' not in ctx:
             ctx['guard'] = CycleGuard()
-
         if 'addp_schema' not in ctx:
             # Schema Object of additionalProperties
             ctx['addp_schema'] = None
@@ -251,6 +246,16 @@ class Primitive(object):
             # default is do not introspect, raise errors
             ctx['introspect'] = False
 
+        origname = obj.name
+        obj = deref(obj)
+
+        # Apply name priority:
+        # 1- derefed obj.name
+        # 2- original obj.name
+        # 3- name provided as input of the function
+        # 4- name provided in ctx
+        name = obj.name or origname or name or ctx.get('name',None)
+
         # cycle guard
         ctx['guard'].update(obj)
 
@@ -258,12 +263,8 @@ class Primitive(object):
         # For Swagger2, schema is either the schema property or a copy of the object itself
         # Note that this function is recursive
         # so we are maybe calling with the schema instead of the objects
-        if name == None:
-            name = getattr(obj, 'name', None)
         if hasattr(obj, "schema"):
             schema = deref(obj.schema)
-            if name == None:
-                name = ctx.get('name', None)
             if required == None:
                 required = getattr(obj, 'required', None)
             return self.produce(schema, val, ctx=ctx, name=name, required=required)
