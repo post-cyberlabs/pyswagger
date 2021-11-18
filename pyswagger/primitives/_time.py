@@ -27,10 +27,10 @@ class Date(Time):
         :param v: things used to constrcut date
         :type v: timestamp in float, datetime.date object, or ISO-8601 in str
         """
-        if v == None:
-            return "date"
         self.v = None
-        if isinstance(v, float):
+        if v == None:
+            self.v = datetime.date.now()
+        elif isinstance(v, float):
             self.v = datetime.date.fromtimestamp(v)
         elif isinstance(v, datetime.date):
             self.v = v
@@ -50,10 +50,10 @@ class Datetime(Time):
         :param v: things used to constrcut date
         :type v: timestamp in float, datetime.datetime object, or ISO-8601 in str
         """
-        if v == None:
-            return "datetime"
         self.v = None
-        if isinstance(v, float):
+        if v == None:
+            self.v = datetime.datetime.now()
+        elif isinstance(v, float):
             self.v = datetime.datetime.utcfromtimestamp(v)
         elif isinstance(v, datetime.datetime):
             self.v = v

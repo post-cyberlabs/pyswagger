@@ -12,7 +12,7 @@ def validate_float(obj, ret, val, ctx):
 
 def create_float(obj, v, ctx=None):
     if v == None:
-        return "float"
+        return 0.0
     r = float(v)
     validate_float(obj, r, v, ctx)
     return r

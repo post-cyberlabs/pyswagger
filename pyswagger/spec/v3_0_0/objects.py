@@ -560,7 +560,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
             # formData will be converted to real data by marshaller
             yield(i,name,c)
 
-    def parameters_iter(self):
+    def parameters_iter(self, introspect=True):
 
         if self.parameters:
             parameters = deref(self.parameters)
@@ -571,10 +571,10 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                 for mediatype in content:
                     _content = deref(content[mediatype])
                     _schema = deref(_content.schema)
-                    yield from self._parameters_iter(_content, _schema, p.name, introspect=True)
+                    yield from self._parameters_iter(_content, _schema, p.name, introspect=introspect)
             else:
                 _schema = deref(p.schema)
-                yield from self._parameters_iter(p, _schema, p.name, introspect=True)
+                yield from self._parameters_iter(p, _schema, p.name, introspect=introspect)
 
         if self.requestBody:
             if self.requestBody.content:
@@ -582,7 +582,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                 for mediatype in content:
                     p = deref(content[mediatype])
                     _schema = deref(p.schema)
-                    yield from self._parameters_iter(p, _schema, mediatype, introspect=True)
+                    yield from self._parameters_iter(p, _schema, mediatype, introspect=introspect)
 
     def __call__(self, **k):
         # prepare parameter set

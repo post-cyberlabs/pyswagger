@@ -5,6 +5,8 @@ from validate_email import validate_email
 
 
 def validate_str(obj, ret, val, ctx):
+    if ctx.get('introspect',False) and val == None:
+        return val
     if obj.enum and ret not in obj.enum:
         raise ValidationError('{0} is not a valid enum for {1}'.format(ret, str(obj.enum)))
     if obj.maxLength and len(ret) > obj.maxLength:
@@ -17,11 +19,12 @@ def validate_str(obj, ret, val, ctx):
 
 def create_str(obj, v, ctx=None):
     if v == None:
-        return "string"
+        return None
     if isinstance(v, six.string_types):
         r = v
     else:
         r = str(v)
+
     validate_str(obj, r, v, ctx)
     return r
 

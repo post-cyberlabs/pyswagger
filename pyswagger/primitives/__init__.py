@@ -20,10 +20,54 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+class Introspect(dict):
+
+    # Static / Class object
+    introspected = {}
+
+    def __init__(self, **kwargs):
+        dict.__init__(self, **kwargs)
+
+        if 'name' in self and self['name'] != None:
+            if self['name'] not in Introspect.introspected:
+                Introspect.introspected[self['name']] = self
+
+    def __repr__(self):
+        required=""
+        enum=""
+        description=""
+        val=""
+        type=""
+        default=""
+        if 'required' in self and self['required']:
+            required="Required:"
+        if 'enum' in self and self['enum'] != None:
+            enum = "(%s)" % ",".join(self['enum'])
+        if 'default' in self and self['default'] != None:
+            default = "(default:%s)" % self['default']
+        if 'description' in self and self['description'] != None:
+            description = ":"+self['description']
+        if 'type' in self and self['type']:
+            type = self['type']
+        if 'val' in self and self['val']!=None:
+            if type:
+                val += type + ":"
+                type = ""
+            val += "%s" % self['val']
+
+        return "<%s%s%s%s%s%s>" % (
+            required,
+            type,
+            val,
+            default,
+            description,
+            enum,
+        )
+
+    def __str__(self):
+        return str(self['val'])
 
 # TODO: enum is suitable for all types, not only string
-
-
 class Primitive(object):
     """ primitive factory
     """
@@ -161,7 +205,7 @@ class Primitive(object):
         :param pyswagger.spec.v2_0.objects.Schema obj: spec to construct primitives
         :param val: value to construct primitives
 
-        :return: the created primitive
+        :return: the created primitive or an introspect object if ctx['introspect'] is true
         """
         '''
         From OpenAPI (v3), Parameter object uses fixed fields:
@@ -247,10 +291,12 @@ class Primitive(object):
 
         if isinstance(ret, (Date, Datetime, Byte, File)):
             # it's meanless to handle allOf for these types.
-            return ret
+            return self._wrap_ret(obj, ret, ctx, required, name)
 
         def _apply(o, r, v, c):
-            if hasattr(ret, 'apply_with'):
+            if c['introspect']:
+                r = r['val']
+            if hasattr(r, 'apply_with'):
                 v = r.apply_with(o, v, c)
             else:
                 _2nd = c['2nd_pass']
@@ -294,7 +340,7 @@ class Primitive(object):
                     try:
                         ret = self.produce(a, val, ctx)
                     except Exception as ex:
-                        logger.warning("Cannot produce with value %s: %s" % (val, str(ex)))
+                        logger.warning("Cannot produce %s with value %s: %s" % (name, val, str(ex)))
                         excs.append(ex)
                 else:
                     val = _apply(a, ret, val,ctx)
@@ -307,7 +353,13 @@ class Primitive(object):
         if ret != None and hasattr(ret, 'cleanup'):
             val = ret.cleanup(val, ctx)
 
+        return self._wrap_ret(obj, ret, ctx, required, name)
+
+    def _wrap_ret(self, obj, ret, ctx, required, name):
+        if ctx['introspect']:
+            return Introspect(name=name, val=ret, required=required, type=obj.type, default=obj.default, description=obj.description, enum=obj.enum)
         return ret
+
 
     def is_primitive(self, _type):
         """ check if a given object refering to a primitive

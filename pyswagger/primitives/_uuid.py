@@ -20,7 +20,8 @@ class UUID(object):
         :type val: uuid as byte, string, or uuid.UUID
         """
         if val == None:
-            return "uuid"
+            self.v = None
+            return self.v
         if isinstance(val, uuid.UUID):
             self.v = val
         elif isinstance(val, six.string_types):
