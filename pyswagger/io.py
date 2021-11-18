@@ -76,7 +76,7 @@ class Request(object):
         if self.__op.consumes and content_type not in self.__op.consumes:
             raise errs.SchemaError('content type {0} does not present in {1}'.format(content_type, self.__op.consumes))
 
-        # according to spec, payload should be one and only,
+        # according to SwaggerV2 spec, payload should be one and only,
         # so we just return the first value in dict.
         for parameter in self.__op.parameters:
             parameter = final(parameter)
@@ -88,7 +88,25 @@ class Request(object):
                 body = data[parameter.name]
                 return content_type, self.__op._mime_codec.marshal(content_type, body, _type=_type, _format=_format, name=name)
 
-        return None, None
+        return None,None
+
+    def _prepare_mediatype(self, data, default_content_type='application/json'):
+        content_type = self.__consume
+
+        # Todo: OpenAPI uses requestBody/content[MediaType] instead of consumes
+        if not content_type:
+            content_type = self.__op.consumes[0] if self.__op.consumes else default_content_type
+
+        if self.__op.consumes and content_type not in self.__op.consumes:
+            raise errs.SchemaError('content type {0} does not present in {1}'.format(content_type, self.__op.consumes))
+
+        schema = self.__op.requestBody.content[content_type].schema
+        schema = deref(schema)
+        _type = schema.type
+        _format = schema.format
+        name = schema.name
+
+        return content_type, self.__op._mime_codec.marshal(content_type, data, _type=_type, _format=_format, name=name)
 
     def _prepare_files(self, encoding, data):
         """ private function to prepare content for paramType=form with File
@@ -236,7 +254,7 @@ class Request(object):
 
         if self.__consume != None:
             if self.__consume in self.__p:
-                content_type, data = self._prepare_body(self.__p[self.__consume][-1][1])
+                content_type, data = self._prepare_mediatype(self.__p[self.__consume])
                 self.__data.append((content_type,data))
 
         if content_type:

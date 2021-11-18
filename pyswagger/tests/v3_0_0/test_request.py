@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from pyswagger import App, io, primitives
-import pyswagger.contrib.client.requests
+from ... import App, io, primitives, Security
+from ...primitives import Primitive
+from ...contrib.client.requests import Client
 from ..utils import get_test_data_folder
 from ...errs import SchemaError
 import unittest
@@ -20,8 +21,8 @@ class RequestTestCase(unittest.TestCase):
         ))
 
     def test_client_simple(self):
-        auth = pyswagger.Security(self.app)
-        c = pyswagger.contrib.client.requests.Client(auth)
+        auth = Security(self.app)
+        c = Client(auth)
         req,resp = self.app.op['listPets']()
         req._patch()
         req.prepare()
@@ -31,13 +32,13 @@ class RequestTestCase(unittest.TestCase):
         self.assertEqual(c.prepare_schemes(req), [])
 
     def test_client_args(self):
-        auth = pyswagger.Security(self.app)
-        c = pyswagger.contrib.client.requests.Client(auth)
+        auth = Security(self.app)
+        c = Client(auth)
         self.assertRaises(ValueError, self.app.op['showPetById'])
 
     def test_client_opts(self):
-        auth = pyswagger.Security(self.app)
-        c = pyswagger.contrib.client.requests.Client(auth)
+        auth = Security(self.app)
+        c = Client(auth)
 
         req,resp = self.app.op['showPetById'](petId=3)
         req._patch({'url_netloc':"1.1.1.1", 'url_scheme':"https"})
@@ -101,6 +102,7 @@ class RequestDataTestCase(unittest.TestCase):
         self.assertRaises(ValueError, self.app.op['perform-search'], version="1",dataset="animals")
 
         req,resp = self.app.op['perform-search'](version="1",dataset="animals",criteria="*")
+
         op = self.app.s('/{dataset}/{version}/records').post
 
         print(op.requestBody.content['application/x-www-form-urlencoded'].schema.__dict__)
@@ -119,11 +121,9 @@ class RequestDataTestCase(unittest.TestCase):
         print('request.data: {0}'.format(req.data))
         req.prepare()
 
-
         #self.assertRaises(SchemaError, req.prepare)
 
         req.consume('application/x-www-form-urlencoded')
-
         req.prepare()
 
         print('request.url: {0}'.format(req.url))
@@ -134,4 +134,4 @@ class RequestDataTestCase(unittest.TestCase):
         print('request.body: {0}'.format(req.body))
         print('request.data: {0}'.format(req.data))
 
-        #self.assertEqual(req,"blah")
+        self.assertEqual(req.data,[('application/x-www-form-urlencoded', 'criteria=%2A&rows=100&start=0')])

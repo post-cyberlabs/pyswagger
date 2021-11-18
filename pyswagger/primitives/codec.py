@@ -10,6 +10,8 @@ class MimeCodec:
         jsonCodec = JsonCodec()
         self.register('application/json', jsonCodec)
         self.register('text/json', jsonCodec)
+        wwwformUrlencoded = WWWFormUrlencoded()
+        self.register('application/x-www-form-urlencoded', wwwformUrlencoded)
 
     def register(self, mime, codec):
         self._codecs[mime.lower()] = codec
@@ -45,9 +47,19 @@ class PlainCodec:
 
 class JsonCodec:
     def marshal(self, value, **kwargs):
+        if kwargs['_type'] == 'object':
+            value = dict(value)
         return json.dumps(value, cls=PrimJSONEncoder)
 
     def unmarshal(self, data, **kwargs):
         if isinstance(data, six.binary_type):
             data = data.decode('utf-8')
         return json.loads(data)
+
+
+class WWWFormUrlencoded:
+    def marshal(self, value, **kwargs):
+        return six.moves.urllib.parse.urlencode(value)
+
+    def unmarshal(self, data, **kwargs):
+        return six.moves.urllib.parse.urldecode(data)
