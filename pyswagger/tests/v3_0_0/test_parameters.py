@@ -24,12 +24,21 @@ class GetParametersTestCase(unittest.TestCase):
         op = self.app.s('/{dataset}/{version}/records').post
 
         params = []
-        for data in op.parameters_iter():
+        for data in op.parameters_iter(introspect="value"):
             params.append(data)
 
-        self.assertTrue(('path', 'version', 'v1') in params)
-        self.assertTrue(('path', 'dataset', 'oa_citations') in params)
-        self.assertTrue(('application/x-www-form-urlencoded', 'criteria', 'string') in params)
-        self.assertTrue(('application/x-www-form-urlencoded', 'rows', 100) in params)
-        self.assertTrue(('application/x-www-form-urlencoded', 'start', 0) in params)
-        self.assertEqual(len(params),5)
+        print(params)
+        param = params[0]
+        self.assertEqual(param[0],'path')
+        self.assertEqual(param[1],'version')
+        self.assertEqual(str(param[2]),'v1')
+        param = params[1]
+        self.assertEqual(param[1],'dataset')
+        self.assertEqual(str(param[2]),'oa_citations')
+        param = params[2]
+        param = param[2]
+        print(param['val'])
+        self.assertEqual(list(param['val'].keys()),['criteria','rows','start'])
+        self.assertEqual(param['val']['rows']['val'],100)
+
+        self.assertEqual(len(params),3)

@@ -25,31 +25,39 @@ class Introspect(dict):
     # Static / Class object
     introspected = {}
 
-    def __init__(self, **kwargs):
+    def __init__(self, printtype, **kwargs):
         dict.__init__(self, **kwargs)
+
+        if printtype and isinstance(printtype, str):
+            self.printtype = printtype
+        else:
+            self.printtype = "simple"
 
         if 'name' in self and self['name'] != None:
             if self['name'] not in Introspect.introspected:
                 Introspect.introspected[self['name']] = self
 
     def __repr__(self):
+        return self.repr_level(self.printtype)
+
+    def repr_level(self, level):
         required=""
         enum=""
         description=""
         val=""
         type=""
         default=""
-        if 'required' in self and self['required']:
+        if 'required' in self and self['required'] and level in ['required','full']:
             required="Required:"
-        if 'enum' in self and self['enum'] != None:
+        if 'enum' in self and self['enum'] != None and level in ['enum', 'full']:
             enum = "(%s)" % ",".join(self['enum'])
-        if 'default' in self and self['default'] != None:
+        if 'default' in self and self['default'] != None and level in ['default', 'simple', 'full']:
             default = "(default:%s)" % self['default']
-        if 'description' in self and self['description'] != None:
+        if 'description' in self and self['description'] != None and level in ['description', 'full']:
             description = ":"+self['description']
-        if 'type' in self and self['type']:
+        if 'type' in self and self['type'] and level in ['type', 'simple', 'full']:
             type = self['type']
-        if 'val' in self and self['val']!=None:
+        if 'val' in self and self['val']!=None and level in ['simple', 'value', 'val', 'full']:
             if type:
                 val += type + ":"
                 type = ""
@@ -358,7 +366,7 @@ class Primitive(object):
 
     def _wrap_ret(self, obj, ret, ctx, required, name):
         if ctx['introspect']:
-            return Introspect(name=name, val=ret, required=required, type=obj.type, default=obj.default, description=obj.description, enum=obj.enum)
+            return Introspect(ctx['introspect'], name=name, val=ret, required=required, type=obj.type, default=obj.default, description=obj.description, enum=obj.enum)
         return ret
 
 
