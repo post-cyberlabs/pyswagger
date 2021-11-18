@@ -520,12 +520,13 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'method': None,
     }
 
-    def _parameters_iter(self, p, schema=None, name=None, parameters={}, introspect=False):
+    def _parameters_iter(self, p, schema=None, name=None, parameters=None, introspect=False):
         # At this point we are loading provided
         # arguments based on the swagger description
 
         # do not handle default or requirements manually
         # as this should be handled by the Primitive generation class
+        parameters = parameters or {}
         v = parameters.get(name, None)
 
         # transform using the prim factory associated
