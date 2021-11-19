@@ -2,12 +2,17 @@ from __future__ import absolute_import
 import uuid
 import six
 
-
-class UUID(object):
+class SwaggerUUID(object):
     """ wrapper of uuid.UUID
     """
+    def __init__(self):
+        super(object, self).__init__()
+        self.v = None
 
     def __str__(self):
+        return str(self.v)
+
+    def __repr__(self):
         return str(self.v)
 
     def to_json(self):

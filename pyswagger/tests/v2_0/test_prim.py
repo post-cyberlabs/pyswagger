@@ -219,12 +219,12 @@ class SchemaTestCase(unittest.TestCase):
 
         # string
         dv = d._prim_('12345678-1234-5678-1234-567812345678', self.app.prim_factory)
-        self.assertTrue(isinstance(dv, primitives.UUID), 'should be an primitives.UUID, not {0}'.format(str(type(dv))))
+        self.assertTrue(isinstance(dv, primitives.SwaggerUUID), 'should be an primitives.UUID, not {0}'.format(str(type(dv))))
         self.assertEqual(str(dv), '12345678-1234-5678-1234-567812345678')
 
         # byte
         dv = d._prim_(six.b('\x78\x56\x34\x12\x34\x12\x78\x56\x12\x34\x56\x78\x12\x34\x56\x78'), self.app.prim_factory)
-        self.assertTrue(isinstance(dv, primitives.UUID), 'should be an primitives.UUID, not {0}'.format(dv))
+        self.assertTrue(isinstance(dv, primitives.SwaggerUUID), 'should be an primitives.UUID, not {0}'.format(dv))
         self.assertEqual(dv.v.bytes, six.b('\x78\x56\x34\x12\x34\x12\x78\x56\x12\x34\x56\x78\x12\x34\x56\x78'))
 
         # unsupported type - e.g. int

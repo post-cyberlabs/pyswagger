@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import six
+from ..errs import ValidationError, SchemaError
 
 class Model(dict):
     """ for complex type: models
@@ -20,9 +21,15 @@ class Model(dict):
         :param obj.Model obj: model object to instruct how to create this model
         :param dict val: things used to construct this model
         """
+        baseval = val
         if 'params' in ctx and not val:
             val = ctx['params']
-        elif not val:
+        # If no value provided: either object is required or introspected
+        # in both case we try to generate a valid object
+        # (introspection will just skip required / value sanity check testing)
+        if val == None and ctx['introspect']:
+            val = {}
+        elif val == None:
             val = {}
         for k, v in six.iteritems(val):
             if k in obj.properties:
@@ -54,7 +61,7 @@ class Model(dict):
 
         not_found = set(obj.required) - set(six.iterkeys(self))
         if len(not_found) and not ctx['introspect']:
-            raise ValueError('Model missing required key(s): {0}'.format(', '.join(not_found)))
+            raise ValidationError('Model missing required key(s): {0}'.format(', '.join(not_found)))
 
         # remove assigned properties to avoid duplicated
         # primitive creation

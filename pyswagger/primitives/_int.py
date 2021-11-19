@@ -12,7 +12,7 @@ def validate_int(obj, ret, val, ctx):
 
 def create_int(obj, v, ctx=None):
     if v == None:
-        return 0
+        return None
     r = int(v)
     validate_int(obj, r, v, ctx)
     return r

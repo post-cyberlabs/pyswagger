@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from .primitives.comm import PrimJSONEncoder
 from .utils import final, deref, CaseInsensitiveDict
 from pyswagger import errs
 from uuid import uuid4

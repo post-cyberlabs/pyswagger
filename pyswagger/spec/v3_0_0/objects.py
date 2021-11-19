@@ -543,15 +543,11 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
             return
 
         # check parameter location
-        #i = 'formData'
         i = getattr(p, 'in', name)
 
         # if the data specification is a file
         if schema.type == 'file':
             yield('file',name,c)
-        elif isinstance(c, Model):
-            for name,item in c.items():
-                yield(i,name,item)
         # If It is a GET / POST parameter
         elif i in ('query', 'formData'):
             if isinstance(c, Array):
@@ -605,14 +601,16 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                     for ptype,pname,pval in self._parameters_iter(_content, _schema, p.name, k):
                         if ptype not in params:
                             params[ptype] = []
-                        params[ptype].append((pname,pval))
+                        if pname in k:
+                            params[ptype].append((pname,pval))
                         names.append(pname)
             else:
                 _schema = deref(p.schema)
                 for ptype,pname,pval in self._parameters_iter(p, _schema, p.name, k):
                     if ptype not in params:
                         params[ptype] = []
-                    params[ptype].append((pname,pval))
+                    if pname in k:
+                        params[ptype].append((pname,pval))
                     names.append(pname)
 
 

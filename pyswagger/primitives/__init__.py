@@ -10,7 +10,7 @@ from ._file import File
 from ._float import create_float, validate_float
 from ._array import Array
 from ._model import Model
-from ._uuid import UUID
+from ._uuid import SwaggerUUID
 from .comm import create_obj, _2nd_pass_obj
 from .render import Renderer
 from .codec import MimeCodec
@@ -49,19 +49,22 @@ class Introspect(dict):
         default=""
         if 'required' in self and self['required'] and level in ['required','full']:
             required="Required:"
-        if 'enum' in self and self['enum'] != None and level in ['enum', 'full']:
+        if 'enum' in self and self['enum'] != None and level in ['enum', 'simple', 'full']:
             enum = "(%s)" % ",".join(self['enum'])
         if 'default' in self and self['default'] != None and level in ['default', 'simple', 'full']:
             default = "(default:%s)" % self['default']
         if 'description' in self and self['description'] != None and level in ['description', 'full']:
             description = ":"+self['description']
         if 'type' in self and self['type'] and level in ['type', 'simple', 'full']:
-            type = self['type']
+            if 'format' in self and self['format']:
+                type = self['format']
+            else:
+                type = self['type']
         if 'val' in self and self['val']!=None and level in ['simple', 'value', 'val', 'full']:
             if type:
                 val += type + ":"
                 type = ""
-            val += "%s" % self['val']
+            val += "%s" % self['val'].__repr__()
 
         return "<%s%s%s%s%s%s>" % (
             required,
@@ -72,8 +75,11 @@ class Introspect(dict):
             enum,
         )
 
+    def val(self):
+        return self['val']
+
     def __str__(self):
-        return str(self['val'])
+        return str(self.val())
 
 # TODO: enum is suitable for all types, not only string
 class Primitive(object):
@@ -112,7 +118,7 @@ class Primitive(object):
                 # TODO: add validation for email, uuid
                 # TODO: add convertion of uuid from python's one
                 'email': (create_str, validate_email_),
-                'uuid': (functools.partial(create_obj, constructor=UUID), _2nd_pass_obj),
+                'uuid': (functools.partial(create_obj, constructor=SwaggerUUID), _2nd_pass_obj),
                 'password': (create_str, validate_str),
 
                 'byte': (functools.partial(create_obj, constructor=Byte), _2nd_pass_obj),
@@ -255,6 +261,7 @@ class Primitive(object):
             ctx['introspect'] = False
 
         origname = obj.name
+        origval = val
         obj = deref(obj)
 
         # Apply name priority:
@@ -279,8 +286,11 @@ class Primitive(object):
         # Check default and required values for simple types
         val = obj.default if val == None else val
         if val == None:
+            # If required:
+            # If introspect, we still generate the object
+            # If auto, we still try to generate the object even if no default has been specified
             if required==True and not ctx['introspect']:
-                raise ValueError('requires parameter: ' + name)
+                raise ValidationError('requires parameter: ' + name)
 
         ret = None
         properties = []
@@ -289,10 +299,24 @@ class Primitive(object):
         if obj.type:
             creater, _2nd = self.get(_type=obj.type, _format=obj.format)
             if not creater:
-                raise ValueError('Can\'t resolve type from:(' + str(obj.type) + ', ' + str(obj.format) + ')')
+                raise ValidationError('Can\'t resolve type from:(' + str(obj.type) + ', ' + str(obj.format) + ')')
             ret = creater(obj, val, ctx=ctx)
             if _2nd:
-                val = _2nd(obj, ret, val, ctx=ctx)
+                try:
+                    val = _2nd(obj, ret, val, ctx=ctx)
+                    # If 2nd pass failed (validation or object generation)
+                    # then unvalidate the return object
+                    if val == None:
+                        ret = None
+                except ValidationError as ex:
+                    # 2nd pass is often a validation routine
+                    # If provided value is None and object is not required
+                    # it means we are not necessarilly able to build a default value
+                    if required or val != None:
+                        raise ex
+                    else:
+                        return None
+
                 ctx['2nd_pass'] = _2nd
         elif len(properties) or obj.additionalProperties:
             ret = Model()
@@ -366,7 +390,7 @@ class Primitive(object):
 
     def _wrap_ret(self, obj, ret, ctx, required, name):
         if ctx['introspect']:
-            return Introspect(ctx['introspect'], name=name, val=ret, required=required, type=obj.type, default=obj.default, description=obj.description, enum=obj.enum)
+            return Introspect(ctx['introspect'], name=name, val=ret, required=required, type=obj.type, default=obj.default, description=obj.description, enum=obj.enum, format=obj.format)
         return ret
 
 

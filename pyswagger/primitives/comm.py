@@ -17,6 +17,9 @@ def min_max(obj, val, is_max):
     n = getattr(obj, 'maximum' if is_max else 'minimum', None)
     if n == None:
         return
+    if not (isinstance(val,int) or isinstance(val,float)):
+        raise ValidationError('condition failed for {3}: {0}, v:{1} compared to o:{2} but value is {4}'.format('maximum' if is_max else 'minimum', val, n, obj.name, type(val)))
+
 
     _eq = getattr(obj, 'exclusiveMaximum' if is_max else 'exclusiveMinimum', False)
     if is_max:
@@ -25,7 +28,7 @@ def min_max(obj, val, is_max):
         to_raise = val <= n if _eq else val < n
 
     if to_raise:
-        raise ValidationError('condition failed: {0}, v:{1} compared to o:{2}'.format('maximum' if is_max else 'minimum', val, n))
+        raise ValidationError('condition failed for {3}: {0}, v:{1} compared to o:{2}'.format('maximum' if is_max else 'minimum', val, n, obj.name))
 
 #
 # creater/2nd_pass function with python user defined class

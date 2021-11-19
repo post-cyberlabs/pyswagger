@@ -29,8 +29,8 @@ class Date(Time):
         """
         self.v = None
         if v == None:
-            self.v = datetime.date.now()
-        elif isinstance(v, float):
+            return None
+        if isinstance(v, float):
             self.v = datetime.date.fromtimestamp(v)
         elif isinstance(v, datetime.date):
             self.v = v
@@ -52,7 +52,7 @@ class Datetime(Time):
         """
         self.v = None
         if v == None:
-            self.v = datetime.datetime.now()
+            return None
         elif isinstance(v, float):
             self.v = datetime.datetime.utcfromtimestamp(v)
         elif isinstance(v, datetime.datetime):
