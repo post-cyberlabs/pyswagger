@@ -4,7 +4,7 @@ from ... import App, io, primitives, Security
 from ...primitives import Primitive
 from ...contrib.client.requests import Client
 from ..utils import get_test_data_folder
-from ...errs import SchemaError
+from ...errs import SchemaError,ValidationError
 import unittest
 import os
 import six
@@ -34,7 +34,7 @@ class RequestTestCase(unittest.TestCase):
     def test_client_args(self):
         auth = Security(self.app)
         c = Client(auth)
-        self.assertRaises(ValueError, self.app.op['showPetById'])
+        self.assertRaises(ValidationError, self.app.op['showPetById'])
 
     def test_client_opts(self):
         auth = Security(self.app)
@@ -99,7 +99,9 @@ class RequestDataTestCase(unittest.TestCase):
     def testPostParams(self):
 
         # the query model should failed as we removed the default for the criteria variable (a post data item)
-        self.assertRaises(ValueError, self.app.op['perform-search'], version="1",dataset="animals")
+
+        # as there is only one content_type for the body, the query should fail as the body is empty
+        self.assertRaises(ValidationError, self.app.op['perform-search'], version="1",dataset="animals")
 
         req,resp = self.app.op['perform-search'](version="1",dataset="animals",criteria="*")
 
@@ -108,7 +110,7 @@ class RequestDataTestCase(unittest.TestCase):
         print(op.requestBody.content['application/x-www-form-urlencoded'].schema.__dict__)
 
         # Providing an invalid parameter raises an error
-        self.assertRaises(ValueError, op, version="1",dataset="animals",blah="bluh")
+        self.assertRaises(ValidationError, op, version="1",dataset="animals",blah="bluh")
 
         print(req.__dict__)
 

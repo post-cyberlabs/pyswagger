@@ -61,7 +61,7 @@ class Model(dict):
 
         not_found = set(obj.required) - set(six.iterkeys(self))
         if len(not_found) and not ctx['introspect']:
-            raise ValidationError('Model missing required key(s): {0}'.format(', '.join(not_found)))
+            raise ValidationError('Model for {1} missing required key(s): {0}'.format(', '.join(not_found), ctx['name']))
 
         # remove assigned properties to avoid duplicated
         # primitive creation

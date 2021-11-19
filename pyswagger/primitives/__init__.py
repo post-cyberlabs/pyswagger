@@ -312,7 +312,9 @@ class Primitive(object):
                     # 2nd pass is often a validation routine
                     # If provided value is None and object is not required
                     # it means we are not necessarilly able to build a default value
-                    if required or val != None:
+
+                    # If the content is required, ctx['required'] will be set
+                    if required or val != None or 'required' in ctx and ctx['required']:
                         raise ex
                     else:
                         return None

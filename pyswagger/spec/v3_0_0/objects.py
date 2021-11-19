@@ -525,7 +525,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         'method': None,
     }
 
-    def _parameters_iter(self, p, schema=None, name=None, parameters=None, introspect=False):
+    def _parameters_iter(self, p, schema=None, name=None, parameters=None, introspect=False, required=None):
         # At this point we are loading provided
         # arguments based on the swagger description
 
@@ -536,7 +536,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
 
         # transform using the prim factory associated
         # to the datatype when patching the object
-        c = p._prim_(v, self._prim_factory, ctx=dict(read=False,name=name,params=parameters,introspect=introspect))
+        c = p._prim_(v, self._prim_factory, ctx=dict(read=False,name=name,params=parameters,introspect=introspect,required=required))
 
         # do not provide value for parameters that user didn't specify.
         if c == None and not introspect:
@@ -548,6 +548,9 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         # if the data specification is a file
         if schema.type == 'file':
             yield('file',name,c)
+        elif isinstance(c, Model):
+            for name,item in c.items():
+                yield(i,name,item)
         # If It is a GET / POST parameter
         elif i in ('query', 'formData'):
             if isinstance(c, Array):
@@ -587,7 +590,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                     _schema = deref(p.schema)
                     yield from self._parameters_iter(p, _schema, mediatype, introspect=introspect)
 
-    def __call__(self, **k):
+    def __call__(self, _swagger_consume=None, **k):
         # prepare parameter set
         params = dict(header=[], query=[], path=[], body=[], formData=[], file=[])
         names = []
@@ -621,10 +624,11 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                     params[mediatype] = []
                     p = deref(content[mediatype])
                     _schema = deref(p.schema)
-                    for ptype,pname,pval in self._parameters_iter(p, _schema, mediatype, k):
-                        if ptype not in params:
-                            params[ptype] = []
-                        params[ptype].append((pname,pval))
+                    required = None
+                    if len(content)<=1 or mediatype == _swagger_consume:
+                        required = True
+                    for ptype,pname,pval in self._parameters_iter(p, _schema, mediatype, k, required=required):
+                        params[mediatype].append((pname,pval))
                         names.append(pname)
 
         # check for unknown parameter
