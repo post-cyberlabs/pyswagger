@@ -256,6 +256,12 @@ class Request(object):
                 content_type, data = self._prepare_mediatype(self.__p[self.__consume])
                 self.__data.append((content_type,data))
 
+        if self.__p['query']:
+            query_params = []
+            for name,val in self.__p['query']:
+                query_params.append((name,str(val)))
+            self.__p['query'] = query_params
+
         if content_type:
             self.__header.update({'Content-Type': content_type})
 

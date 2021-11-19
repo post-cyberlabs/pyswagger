@@ -1,5 +1,7 @@
 from __future__ import absolute_import
 import six
+import json
+from .comm import PrimJSONEncoder
 from ..errs import ValidationError, SchemaError
 
 class Model(dict):
@@ -10,10 +12,26 @@ class Model(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
 
+    # Static class parameter: encoding/decoding style
+    __collection_format = 'json'
+
     def __init__(self):
         """ constructor
         """
         super(Model, self).__init__()
+
+    def __str__(self):
+        """
+        :return: the converted string
+        :rtype: str
+        """
+
+        if self.__collection_format == 'raw':
+            return dict.__str__(self)
+        elif self.__collection_format == 'json':
+            return json.dumps(self, cls=PrimJSONEncoder)
+        else:
+            raise SchemaError('Unsupported collection format when converting to str: {0}'.format(self.__collection_format))
 
     def apply_with(self, obj, val, ctx):
         """ recursively apply Schema object
