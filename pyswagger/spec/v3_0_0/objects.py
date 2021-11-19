@@ -548,7 +548,8 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         # if the data specification is a file
         if schema.type == 'file':
             yield('file',name,c)
-        elif isinstance(c, Model):
+        # if a model is used outside of a query (form data...) explode it into parameters
+        elif isinstance(c, Model) and i not in ['query']:
             for name,item in c.items():
                 yield(i,name,item)
         # If It is a GET / POST parameter
