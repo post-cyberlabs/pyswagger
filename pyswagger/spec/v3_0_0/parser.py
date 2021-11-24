@@ -45,29 +45,6 @@ class XMLObjectContext(Context):
     __swagger_ref_object__ = XML_
 
 
-class SchemaContext(Context):
-    """ Context of Schema Object
-    """
-    __swagger_ref_object__ = Schema
-
-
-# self-reference
-setattr(SchemaContext, '__swagger_child__', {
-    # items here should refer to an Schema Object.
-    # refer to https://github.com/swagger-api/swagger-spec/issues/165
-    # for details
-    'items': (None, SchemaContext),
-    'properties': (ContainerType.dict_, SchemaContext),
-    # solution for properties with 2 possible types
-#    'additionalProperties': (None, AdditionalPropertiesContext),
-    'allOf': (ContainerType.list_, SchemaContext),
-    'anyOf': (ContainerType.list_, SchemaContext),
-#    'xml': (None, XMLObjectContext),
-#    'externalDocs': (None, ExternalDocumentationContext),
-})
-
-
-
 class AdditionalPropertiesContext(Context):
     """ Context of additionalProperties,
     """
@@ -109,6 +86,29 @@ class AdditionalPropertiesContext(Context):
                 ctx.parse(obj)
 
             self._obj = tmp['t']
+
+
+class SchemaContext(Context):
+    """ Context of Schema Object
+    """
+    __swagger_ref_object__ = Schema
+
+
+# self-reference
+setattr(SchemaContext, '__swagger_child__', {
+    # items here should refer to an Schema Object.
+    # refer to https://github.com/swagger-api/swagger-spec/issues/165
+    # for details
+    'items': (None, SchemaContext),
+    'properties': (ContainerType.dict_, SchemaContext),
+    # solution for properties with 2 possible types
+#    'additionalProperties': (None, AdditionalPropertiesContext),
+    'additionalProperties': (None, AdditionalPropertiesContext),
+    'allOf': (ContainerType.list_, SchemaContext),
+    'anyOf': (ContainerType.list_, SchemaContext),
+#    'xml': (None, XMLObjectContext),
+#    'externalDocs': (None, ExternalDocumentationContext),
+})
 
 
 # self-reference

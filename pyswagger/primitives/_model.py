@@ -101,9 +101,9 @@ class Model(dict):
             ctx['addp'] = False
         elif ctx['addp_schema'] != None:
             obj = ctx['addp_schema']
-            #for k, v in six.iteritems(val):
-            #    self[k] = ctx['factory'].produce(obj.additionalProperties, v)
-            #ctx['addp_schema'] = None
+            for k, v in six.iteritems(val):
+                self[k] = ctx['factory'].produce(obj.additionalProperties, v)
+            ctx['addp_schema'] = None
 
         return {}
 
