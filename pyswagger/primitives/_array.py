@@ -60,12 +60,7 @@ class Array(list):
                 val = set(val)
 
         if obj.items:
-            items = deref(obj.items)
-
-            if items:# and len(val):
-                # If no value is provided and introspect, let generate at least one item
-                self.extend(map(functools.partial(ctx['factory'].produce, obj.items, ctx=ctx), val))
-                val = []
+            self.extend(map(functools.partial(ctx['factory'].produce, obj.items, ctx=ctx), val))
 
         # init array as list
         if obj.minItems and len(self) < obj.minItems:

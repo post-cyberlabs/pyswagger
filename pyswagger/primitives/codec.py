@@ -47,7 +47,7 @@ class PlainCodec:
 
 class JsonCodec:
     def marshal(self, value, **kwargs):
-        if kwargs['_type'] == 'object':
+        if kwargs.get('_type',None) == 'object':
             value = dict(value)
         return json.dumps(value, cls=PrimJSONEncoder)
 

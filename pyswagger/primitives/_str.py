@@ -29,6 +29,8 @@ def create_str(obj, v, ctx=None):
     return r
 
 def validate_email_(obj, ret, val, ctx):
+    if ctx.get('introspect',False) and val == None:
+        return val
     if not validate_email(ret):
         raise ValidationError('{0} is not a valid email for {1}'.format(ret, obj))
 

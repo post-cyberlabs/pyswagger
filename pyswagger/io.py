@@ -84,7 +84,7 @@ class Request(object):
                 _type = schema.type
                 _format = schema.format
                 name = schema.name
-                body = data[parameter.name]
+                body = dict(data)[parameter.name]
                 return content_type, self.__op._mime_codec.marshal(content_type, body, _type=_type, _format=_format, name=name)
 
         return None,None
