@@ -216,7 +216,7 @@ class Request(object):
         # TODO: 'dot' is allowed in swagger, but it won't work in python-format
         path_params = {}
         for k, v in self.__p['path']:
-            path_params[k] = six.moves.urllib.parse.quote_plus(v)
+            path_params[k] = six.moves.urllib.parse.quote_plus(str(v))
 
         # combine path parameters into url
         try:

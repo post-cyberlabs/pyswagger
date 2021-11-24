@@ -39,3 +39,5 @@ class SwaggerUUID(object):
             self.v = uuid.UUID(bytes=val)
         else:
             raise ValueError('Unrecognized type for UUID: ' + str(type(val)))
+
+        return self.v
