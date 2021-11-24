@@ -329,8 +329,6 @@ class Primitive(object):
             return self._wrap_ret(obj, ret, ctx, required, name)
 
         def _apply(o, r, v, c):
-            if c['introspect']:
-                r = r['val']
             if hasattr(r, 'apply_with'):
                 v = r.apply_with(o, v, c)
             else:
@@ -346,14 +344,15 @@ class Primitive(object):
         # handle allOf for Schema Object
         allOf = getattr(obj, 'allOf', None)
         if allOf:
+
             not_applied = []
             for a in allOf:
                 a = deref(a)
                 if not ret:
                     # try to find right type for this primitive.
-                    ret = self.produce(a, val, ctx)
+                    ret = self.produce(a, val, dict(ctx,introspect=False))
                 else:
-                    val = _apply(a, ret, val, ctx)
+                    val = _apply(a, ret, val, dict(ctx,introspect=False))
 
                 if not ret:
                     # if we still can't determine the type,
@@ -361,7 +360,7 @@ class Primitive(object):
                     not_applied.append(a)
             if ret:
                 for a in not_applied:
-                    val = _apply(a, ret, val, ctx)
+                    val = _apply(a, ret, val, dict(ctx,introspect=False))
 
         # handle anyOf for Schema Object
         anyOf = getattr(obj, 'anyOf', None)
@@ -373,12 +372,12 @@ class Primitive(object):
                 if not ret:
                     # try to find the right type for this primitive
                     try:
-                        ret = self.produce(a, val, ctx)
+                        ret = self.produce(a, val, dict(ctx,introspect=False))
                     except Exception as ex:
                         logger.warning("Cannot produce %s with value %s: %s" % (name, val, str(ex)))
                         excs.append(ex)
                 else:
-                    val = _apply(a, ret, val,ctx)
+                    val = _apply(a, ret, val, dict(ctx,instrospect=False))
 
             # if we cannot find a matching object, its time to raise the exception
             if not ret and excs:
