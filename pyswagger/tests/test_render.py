@@ -525,11 +525,16 @@ class OperationTestCase(unittest.TestCase):
         self.assertTrue('body.object' in ps, 'should contain body.object, not {0}'.format(ps))
         self.assertTrue(isinstance(ps['body.object'], dict), 'should be dict, not {0}'.format(str(type(ps['body.object']))))
 
+        for ptype,pname,pval in op.parameters_iter(introspect="full"):
+            print(ptype,pname,pval.__repr__())
+
+        print(ps)
+
         req, resp = op(**ps)
         req.prepare(scheme='http', handle_files=False)
 
         # body
-        v = json.loads(req.data)
+        v = json.loads(req.data[0][1])
         self.assertTrue(validate_email(v['contact']), 'should have a valid email in contact, not {0}'.format(v))
         self.assertTrue(isinstance(v['name'], six.string_types), 'should have a string in name, not {0}'.format(v))
         self.assertTrue(isinstance(v['id'], six.integer_types), 'should have a int in id, not {0}'.format(v))
@@ -555,6 +560,11 @@ class OperationTestCase(unittest.TestCase):
         ps = self.rnd.render_all(op)
 
         self.assertTrue(hasattr(ps['thumbnail']['data'].read, '__call__'), '\'data\' should be readable')
+
+        for ptype,pname,pval in op.parameters_iter(introspect="full"):
+            print(ptype,pname,pval.__repr__())
+
+        print(ps)
 
         req, resp = op(**ps)
         req.prepare(scheme='http', handle_files=False)
