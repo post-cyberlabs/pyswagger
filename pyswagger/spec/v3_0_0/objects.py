@@ -549,7 +549,7 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
         if schema.type == 'file':
             yield('file',name,c)
         # if a model is used outside of a query (form data...) explode it into parameters
-        elif isinstance(c, Model) and i not in ['query']:
+        elif isinstance(c, Model) and i not in ['query','body']:
             for name,item in c.items():
                 yield(i,name,item)
         # If It is a GET / POST parameter
@@ -571,17 +571,17 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
 
         if self.parameters:
             parameters = deref(self.parameters)
-        for p in parameters:
-            p = deref(p)
-            if p.content:
-                content = deref(p.content)
-                for mediatype in content:
-                    _content = deref(content[mediatype])
-                    _schema = deref(_content.schema)
-                    yield from self._parameters_iter(_content, _schema, p.name, introspect=introspect)
-            else:
-                _schema = deref(p.schema)
-                yield from self._parameters_iter(p, _schema, p.name, introspect=introspect)
+            for p in parameters:
+                p = deref(p)
+                if getattr(p,'content',None):
+                    content = deref(p.content)
+                    for mediatype in content:
+                        _content = deref(content[mediatype])
+                        _schema = deref(_content.schema)
+                        yield from self._parameters_iter(_content, _schema, p.name, introspect=introspect)
+                else:
+                    _schema = deref(p.schema)
+                    yield from self._parameters_iter(p, _schema, p.name, introspect=introspect)
 
         if self.requestBody:
             if self.requestBody.content:
@@ -591,13 +591,13 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                     _schema = deref(p.schema)
                     yield from self._parameters_iter(p, _schema, mediatype, introspect=introspect)
 
-    def __call__(self, _swagger_consume=None, **k):
+    def __call__(self, **k):
         # prepare parameter set
         params = dict(header=[], query=[], path=[], body=[], formData=[], file=[])
         names = []
         for p in deref(self.parameters):
             p = deref(p)
-            if p.content:
+            if getattr(p,'content',None):
                 content = deref(p.content)
                 for mediatype in content:
                     _content = deref(content[mediatype])
@@ -625,10 +625,8 @@ class Operation(six.with_metaclass(FieldMeta, BaseObj_v3_0_0)):
                     params[mediatype] = []
                     p = deref(content[mediatype])
                     _schema = deref(p.schema)
-                    required = None
-                    if len(content)<=1 or mediatype == _swagger_consume:
-                        required = True
-                    for ptype,pname,pval in self._parameters_iter(p, _schema, mediatype, k, required=required):
+
+                    for ptype,pname,pval in self._parameters_iter(p, _schema, mediatype, k, required=self.requestBody.required):
                         params[mediatype].append((pname,pval))
                         names.append(pname)
 

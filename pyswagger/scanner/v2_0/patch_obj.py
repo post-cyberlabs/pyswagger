@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from ...scan import Dispatcher
-from ...spec.v2_0.objects import PathItem, Operation, Schema, Swagger
-from ...spec.v2_0.parser import PathItemContext
+from ...spec.v2_0.objects import PathItem, Operation, Schema, Swagger, Parameter
+from ...spec.v2_0.parser import PathItemContext, SchemaContext
 from ...utils import jp_split, scope_split, final
 import six
 import copy
@@ -60,13 +60,14 @@ class PatchObject(object):
         if isinstance(app.root, Swagger):
             host = app.root.host if app.root.host else six.moves.urllib.parse.urlparse(app.url)[1]
             host = host if len(host) > 0 else 'localhost'
+            base_path = app.root.basePath or ''
             url = six.moves.urllib.parse.ParseResult(
                     '',                            # schema
                     host,                          # netloc
-                    (app.root.basePath or '') + k, # path
+                    base_path,                     # path
                     '', '', ''                     # param, query, fragment
             )
-            base_path = app.root.basePath
+
         else:
             url = None
             base_path = None
@@ -89,3 +90,28 @@ class PatchObject(object):
                 obj.update_field('name', scope_split(last_token)[-1])
             else:
                 obj.update_field('name', last_token)
+
+    @Disp.register([Parameter])
+    def _parameter(self, path, obj, app):
+        if obj.schema == None:
+            # Ensure compatibility with OpenAPI
+            # consider current object as a schema
+            newschema = Schema(SchemaContext(self,None))
+            obj.update_field('schema', newschema)
+
+            obj.schema.update_field('type',obj.type)
+            obj.schema.update_field('format',obj.format)
+            obj.schema.update_field('items',obj.items)
+            obj.schema.update_field('default',obj.default)
+            obj.schema.update_field('maximum',obj.maximum)
+            obj.schema.update_field('exclusiveMaximum',obj.exclusiveMaximum)
+            obj.schema.update_field('minimum',obj.minimum)
+            obj.schema.update_field('exclusiveMinimum',obj.exclusiveMinimum)
+            obj.schema.update_field('maxLength',obj.maxLength)
+            obj.schema.update_field('minLength',obj.minLength)
+            obj.schema.update_field('maxItems',obj.maxItems)
+            obj.schema.update_field('minItems',obj.minItems)
+            obj.schema.update_field('multipleOf',obj.multipleOf)
+            obj.schema.update_field('enum',obj.enum)
+            obj.schema.update_field('pattern',obj.pattern)
+            obj.schema.update_field('uniqueItems',obj.uniqueItems)
